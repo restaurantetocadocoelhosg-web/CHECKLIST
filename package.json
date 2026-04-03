@@ -1,0 +1,10 @@
+{
+  "name": "checklist-toca-do-coelho",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npx serve . -l $PORT --single"
+  },
+  "dependencies": {
+    "serve": "^14.0.0"
+  }
+}
