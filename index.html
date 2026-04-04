@@ -489,7 +489,14 @@ function renderDashboard(){
 function renderChecklist(sectorId,type){
   const sector=SECTORS.find(s=>s.id===sectorId),tasks=DEFAULT_TASKS[sectorId][type],prog=getProgress(sectorId,type)
   const pct=tasks.length>0?Math.round(prog.done/tasks.length*100):0
-  const allDone=prog.done===tasks.length,fillColor=pct===100?'var(--success)':sector?sector.color:'var(--wine)'
+  const allDone=prog.done===tasks.length,fillColor=prog.approved?'var(--success)':pct===100?'var(--wine-light)':sector?sector.color:'var(--wine)'
+  const canApprove=currentUser.role==='admin'||currentUser.role==='gerente'
+  const locked=prog.completed||prog.approved
+
+  let statusNote=''
+  if(prog.approved) statusNote=`<div class="progress-done-note">✅ Aprovado por ${prog.approvedBy} às ${formatTimeBR(prog.approvedAt)}</div>`
+  else if(prog.completed) statusNote=`<div class="progress-done-note" style="color:var(--gold)">⏳ Finalizado por ${prog.completedBy} às ${formatTimeBR(prog.completedAt)} — aguardando aprovação</div>`
+
   let html=`<div class="type-tabs">
     <button class="type-tab ${type==='abertura'?'active':''}" onclick="navigate('checklist',{sectorId:'${sectorId}',type:'abertura'})">☀️ Abertura</button>
     <button class="type-tab ${type==='fechamento'?'active':''}" onclick="navigate('checklist',{sectorId:'${sectorId}',type:'fechamento'})">🌙 Fechamento</button>
@@ -500,44 +507,78 @@ function renderChecklist(sectorId,type){
       <span class="progress-card-pct" style="color:${fillColor}">${pct}%</span>
     </div>
     <div class="progress-bar-lg"><div class="progress-fill-lg" style="width:${pct}%;background:${fillColor}"></div></div>
-    ${prog.completed?`<div class="progress-done-note">✓ Finalizado por ${prog.completedBy} às ${formatTimeBR(prog.completedAt)}</div>`:''}
+    ${statusNote}
   </div>`
+
   tasks.forEach(task=>{
-    const done=prog.completedTasks.includes(task.id),time=prog.taskTimes&&prog.taskTimes[task.id]
-    html+=`<div class="task-item ${done?'done':''} ${prog.completed?'locked':''}" onclick="${prog.completed?'':` toggleTask('${sectorId}','${type}','${task.id}')`}">
+    const done=prog.completedTasks.includes(task.id)
+    const time=prog.taskTimes&&prog.taskTimes[task.id]
+    const who=prog.taskUsers&&prog.taskUsers[task.id]
+    html+=`<div class="task-item ${done?'done':''} ${locked?'locked':''}" onclick="${locked?'':` toggleTask('${sectorId}','${type}','${task.id}')`}">
       <div class="task-check"><span class="check-mark">✓</span></div>
       <div class="task-body">
         <div class="task-text">${task.text}</div>
-        ${done&&time?`<div class="task-time">Concluído às ${formatTimeBR(time)}</div>`:''}
+        ${done&&who?`<div class="task-time">${who} · ${formatTimeBR(time)}</div>`:''}
       </div>
     </div>`
   })
-  if(!prog.completed){
-    html+=`<button class="btn-finalize" ${allDone?'':'disabled'} onclick="markComplete('${sectorId}','${type}')">
-      ${allDone?'✓ Finalizar e assinar checklist':`Conclua todas as ${tasks.length} tarefas para finalizar`}
-    </button>`
+
+  if(prog.approved){
+    html+=`<div class="done-banner">✅ Checklist aprovado por ${prog.approvedBy} às ${formatTimeBR(prog.approvedAt)}</div>`
+  } else if(prog.completed){
+    if(canApprove){
+      html+=`<div style="background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:1.25rem;margin-top:1.25rem">
+        <div style="font-size:0.85rem;font-weight:600;color:#92400e;margin-bottom:0.75rem">⏳ Aguardando sua aprovação — ${prog.completedBy} finalizou às ${formatTimeBR(prog.completedAt)}</div>
+        <button class="btn-finalize" style="background:var(--success);box-shadow:0 4px 14px rgba(45,122,79,0.35)" onclick="approveChecklist('${sectorId}','${type}')">✅ Aprovar checklist — ${currentUser.name}</button>
+      </div>`
+    } else {
+      html+=`<div style="background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:1.25rem;margin-top:1.25rem;text-align:center;color:#92400e;font-size:0.875rem;font-weight:500">⏳ Aguardando aprovação da gerência</div>`
+    }
   } else {
-    html+=`<div class="done-banner">✓ Checklist de ${type} finalizado com sucesso!</div>`
+    html+=`<button class="btn-finalize" ${allDone?'':'disabled'} onclick="markComplete('${sectorId}','${type}')">
+      ${allDone?`✓ Finalizar checklist — ${currentUser.name}`:`Conclua todas as ${tasks.length} tarefas para finalizar`}
+    </button>`
   }
   return html
 }
+function nowBrasilia(){
+  return new Date().toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T')+'-03:00'
+}
 function toggleTask(sectorId,type,taskId){
-  const prog=getProgress(sectorId,type);if(prog.completed)return
-  const idx=prog.completedTasks.indexOf(taskId);if(!prog.taskTimes)prog.taskTimes={}
-  if(idx===-1){prog.completedTasks.push(taskId);prog.taskTimes[taskId]=new Date().toISOString()}
-  else{prog.completedTasks.splice(idx,1);delete prog.taskTimes[taskId]}
+  const prog=getProgress(sectorId,type);if(prog.completed||prog.approved)return
+  const idx=prog.completedTasks.indexOf(taskId)
+  if(!prog.taskTimes)prog.taskTimes={}
+  if(!prog.taskUsers)prog.taskUsers={}
+  if(idx===-1){
+    prog.completedTasks.push(taskId)
+    prog.taskTimes[taskId]=nowBrasilia()
+    prog.taskUsers[taskId]=currentUser.name
+  } else {
+    prog.completedTasks.splice(idx,1)
+    delete prog.taskTimes[taskId]
+    delete prog.taskUsers[taskId]
+  }
   saveProgress(sectorId,type,prog);navigate('checklist',{sectorId,type});renderSidebar()
 }
 function markComplete(sectorId,type){
   const prog=getProgress(sectorId,type),tasks=DEFAULT_TASKS[sectorId][type]
   if(prog.done<tasks.length)return
-  prog.completed=true;prog.completedBy=currentUser.name;prog.completedAt=new Date().toISOString()
+  prog.completed=true;prog.completedBy=currentUser.name;prog.completedAt=nowBrasilia()
   saveProgress(sectorId,type,prog)
-  const logs=load(KEY.LOGS,[])
-  logs.push({id:Date.now(),sectorId,type,date:getTodayKey(),userName:currentUser.name,completedAt:new Date().toISOString(),taskCount:tasks.length})
-  save(KEY.LOGS,logs)
   const sector=SECTORS.find(s=>s.id===sectorId)
-  toast(`✓ ${sector?sector.name:sectorId} — ${type} finalizado!`)
+  toast(`✓ ${sector?sector.name:sectorId} — ${type} finalizado! Aguardando aprovação.`)
+  navigate('checklist',{sectorId,type});renderSidebar()
+}
+function approveChecklist(sectorId,type){
+  const prog=getProgress(sectorId,type)
+  if(!prog.completed||prog.approved)return
+  prog.approved=true;prog.approvedBy=currentUser.name;prog.approvedAt=nowBrasilia()
+  saveProgress(sectorId,type,prog)
+  const tasks=DEFAULT_TASKS[sectorId][type]
+  const logs=load(KEY.LOGS,[])
+  logs.push({id:Date.now(),sectorId,type,date:getTodayKey(),userName:prog.completedBy,approvedBy:currentUser.name,completedAt:prog.completedAt,approvedAt:prog.approvedAt,taskCount:tasks.length})
+  save(KEY.LOGS,logs)
+  toast(`✓ Aprovado por ${currentUser.name}!`)
   navigate('checklist',{sectorId,type});renderSidebar()
 }
 function renderHistory(){
@@ -547,7 +588,7 @@ function renderHistory(){
   logs.forEach(log=>{
     const sector=SECTORS.find(s=>s.id===log.sectorId),date=log.date||(log.completedAt?log.completedAt.slice(0,10):'')
     if(date!==lastDate){html+=`<div class="section-label">${formatDateLabel(date)}</div>`;lastDate=date}
-    html+=`<div class="history-item"><div class="history-icon">${sector?sector.icon:'📋'}</div><div class="history-info"><div class="history-title">${sector?sector.name:log.sectorId} — ${log.type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div><div class="history-meta">Por ${log.userName} · ${formatTimeBR(log.completedAt)} · ${log.taskCount} tarefas</div></div><div class="history-check">✓</div></div>`
+    html+=`<div class="history-item"><div class="history-icon">${sector?sector.icon:'📋'}</div><div class="history-info"><div class="history-title">${sector?sector.name:log.sectorId} — ${log.type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div><div class="history-meta">Feito por ${log.userName} · ${formatTimeBR(log.completedAt)}${log.approvedBy?' · ✅ Aprovado por '+log.approvedBy:''}</div></div><div class="history-check">✓</div></div>`
   })
   return html
 }
@@ -615,10 +656,10 @@ function getSectorSummary(sectorId){
   ;['abertura','fechamento'].forEach(type=>{const tasks=DEFAULT_TASKS[sectorId][type],prog=getProgress(sectorId,type);total+=tasks.length;done+=prog.done})
   return{done,total}
 }
-function getTodayKey(){return new Date().toISOString().slice(0,10)}
+function getTodayKey(){return new Date().toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,10)}
 function formatDateBR(d){return d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
-function formatTimeBR(iso){if(!iso)return'';return new Date(iso).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
-function formatDateTimeBR(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+function formatTimeBR(iso){if(!iso)return'';return new Date(iso).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'})}
+function formatDateTimeBR(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})+' às '+d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'})}
 function formatDateLabel(ds){
   if(!ds)return'Data desconhecida'
   const today=getTodayKey(),d=new Date(today);d.setDate(d.getDate()-1);const yest=d.toISOString().slice(0,10)
