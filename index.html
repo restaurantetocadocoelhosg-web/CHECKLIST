@@ -518,8 +518,9 @@ function renderChecklist(sectorId,type){
       <div class="task-check"><span class="check-mark">✓</span></div>
       <div class="task-body">
         <div class="task-text">${task.text}</div>
-        ${done&&who?`<div class="task-time">${who} · ${formatTimeBR(time)}</div>`:''}
+        ${done&&who?`<div class="task-time">✓ ${who} · ${formatTimeBR(time)}</div>`:''}
       </div>
+      ${done&&who?`<div style="font-size:0.68rem;font-weight:600;color:var(--success);flex-shrink:0;align-self:center;background:var(--success-bg);border:1px solid var(--success-border);border-radius:20px;padding:2px 8px">${who}</div>`:''}
     </div>`
   })
 
@@ -550,10 +551,17 @@ function toggleTask(sectorId,type,taskId){
   if(!prog.taskTimes)prog.taskTimes={}
   if(!prog.taskUsers)prog.taskUsers={}
   if(idx===-1){
+    const task=DEFAULT_TASKS[sectorId][type].find(t=>t.id===taskId)
+    if(!confirm(`Confirmar conclusão?
+
+"${task?task.text:''}"
+
+Responsável: ${currentUser.name}`))return
     prog.completedTasks.push(taskId)
     prog.taskTimes[taskId]=nowBrasilia()
     prog.taskUsers[taskId]=currentUser.name
   } else {
+    if(!confirm('Desmarcar esta tarefa?'))return
     prog.completedTasks.splice(idx,1)
     delete prog.taskTimes[taskId]
     delete prog.taskUsers[taskId]
@@ -582,13 +590,38 @@ function approveChecklist(sectorId,type){
   navigate('checklist',{sectorId,type});renderSidebar()
 }
 function renderHistory(){
+  // Build entries from logs (approved) + pending progress (completed not yet approved)
   const logs=load(KEY.LOGS,[]).slice().reverse()
-  if(logs.length===0)return`<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Nenhum checklist finalizado ainda.</div></div>`
+  const today=getTodayKey()
+  // Add pending (completed but not approved) entries from today
+  let pending=[]
+  SECTORS.forEach(s=>{
+    ['abertura','fechamento'].forEach(type=>{
+      const prog=getProgress(s.id,type)
+      if(prog.completed&&!prog.approved){
+        pending.push({_pending:true,sectorId:s.id,type,date:today,userName:prog.completedBy,completedAt:prog.completedAt,taskCount:DEFAULT_TASKS[s.id][type].length})
+      }
+    })
+  })
+  const allEntries=[...pending,...logs]
+  if(allEntries.length===0)return`<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Nenhum checklist finalizado ainda.</div></div>`
   let html='',lastDate=''
-  logs.forEach(log=>{
+  allEntries.forEach(log=>{
     const sector=SECTORS.find(s=>s.id===log.sectorId),date=log.date||(log.completedAt?log.completedAt.slice(0,10):'')
     if(date!==lastDate){html+=`<div class="section-label">${formatDateLabel(date)}</div>`;lastDate=date}
-    html+=`<div class="history-item"><div class="history-icon">${sector?sector.icon:'📋'}</div><div class="history-info"><div class="history-title">${sector?sector.name:log.sectorId} — ${log.type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div><div class="history-meta">Feito por ${log.userName} · ${formatTimeBR(log.completedAt)}${log.approvedBy?' · ✅ Aprovado por '+log.approvedBy:''}</div></div><div class="history-check">✓</div></div>`
+    const statusIcon=log._pending?'⏳':'✅'
+    const statusColor=log._pending?'#92400e':'var(--success)'
+    const statusBg=log._pending?'#fefce8':'var(--success-bg)'
+    const statusBorder=log._pending?'#fde68a':'var(--success-border)'
+    const approvedNote=log.approvedBy?` · ✅ Aprovado por ${log.approvedBy}`:log._pending?' · Aguardando aprovação':''
+    html+=`<div class="history-item">
+      <div class="history-icon">${sector?sector.icon:'📋'}</div>
+      <div class="history-info">
+        <div class="history-title">${sector?sector.name:log.sectorId} — ${log.type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div>
+        <div class="history-meta">Feito por ${log.userName} · ${formatTimeBR(log.completedAt)} · ${log.taskCount} tarefas${approvedNote}</div>
+      </div>
+      <div style="width:28px;height:28px;border-radius:50%;background:${statusBg};border:1px solid ${statusBorder};display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:${statusColor};flex-shrink:0">${statusIcon}</div>
+    </div>`
   })
   return html
 }
