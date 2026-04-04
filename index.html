@@ -32,13 +32,19 @@
     .form-group label{display:block;font-size:0.7rem;font-weight:600;color:var(--text-mid);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.08em}
     .form-group input{width:100%;padding:0.8rem 1rem;border:1.5px solid var(--border);border-radius:10px;font-family:var(--sans);font-size:0.95rem;color:var(--text);background:var(--cream);outline:none;transition:all 0.2s}
     .form-group input:focus{border-color:var(--wine);background:white;box-shadow:0 0 0 3px rgba(107,20,20,0.08)}
-    .btn-login{width:100%;padding:0.9rem;margin-top:0.5rem;background:var(--wine);color:white;border:none;border-radius:10px;font-family:var(--sans);font-size:0.95rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;transition:all 0.2s;box-shadow:0 4px 14px rgba(107,20,20,0.35)}
-    .btn-login:hover{background:var(--wine-light);transform:translateY(-1px);box-shadow:0 6px 20px rgba(107,20,20,0.45)}
+    .btn-login{width:100%;padding:0.9rem;margin-top:0.5rem;background:var(--wine);color:white;border:none;border-radius:10px;font-family:var(--sans);font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 14px rgba(107,20,20,0.35)}
+    .btn-login:hover{background:var(--wine-light);transform:translateY(-1px)}
+    .btn-login:disabled{opacity:0.6;cursor:not-allowed;transform:none}
     .login-error{color:#b91c1c;font-size:0.82rem;text-align:center;margin-top:0.75rem;display:none}
     .login-hint{font-size:0.72rem;text-align:center;color:var(--text-muted);margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border);line-height:1.6}
     .login-hint strong{color:var(--text-mid)}
 
-    /* APP */
+    /* LOADING */
+    .loading-overlay{position:fixed;inset:0;background:rgba(250,247,242,0.85);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:1rem}
+    .spinner{width:36px;height:36px;border:3px solid var(--cream-dark);border-top-color:var(--wine);border-radius:50%;animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-text{font-size:0.85rem;color:var(--text-muted)}
+
     #app{display:none;min-height:100vh}
 
     /* SIDEBAR */
@@ -68,7 +74,7 @@
     .topbar{background:white;border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
     .topbar-title{font-family:var(--serif);font-size:1.25rem;font-weight:600;color:var(--wine);line-height:1}
     .topbar-date{font-size:0.75rem;color:var(--text-muted);margin-top:3px;font-weight:300}
-    .topbar-badge{font-size:0.68rem;font-weight:600;padding:4px 12px;border-radius:20px;background:var(--gold-pale);color:var(--text-mid);border:1px solid var(--gold-light);letter-spacing:0.04em}
+    .topbar-badge{font-size:0.68rem;font-weight:600;padding:4px 12px;border-radius:20px;background:var(--gold-pale);color:var(--text-mid);border:1px solid var(--gold-light)}
     .page-content{padding:2rem;flex:1}
 
     /* STATS */
@@ -99,6 +105,7 @@
     .pill-done{background:#f0f9f4;color:#2d7a4f;border:1px solid #a8d5bc}
     .pill-partial{background:#fefce8;color:#a16207;border:1px solid #fde68a}
     .pill-pending{background:#fdf2f2;color:#9b2c2c;border:1px solid #fca5a5}
+    .pill-waiting{background:#fefce8;color:#92400e;border:1px solid #fde68a}
 
     /* CHECKLIST */
     .type-tabs{display:flex;gap:0.5rem;margin-bottom:1.5rem}
@@ -111,7 +118,7 @@
     .progress-card-pct{font-family:var(--serif);font-size:1.75rem;font-weight:700}
     .progress-bar-lg{height:6px;background:var(--cream-dark);border-radius:10px;overflow:hidden}
     .progress-fill-lg{height:100%;border-radius:10px;transition:width 0.5s ease}
-    .progress-done-note{margin-top:0.75rem;font-size:0.78rem;color:var(--success);font-weight:500}
+    .progress-done-note{margin-top:0.75rem;font-size:0.78rem;font-weight:500;display:flex;align-items:center;gap:0.4rem}
     .task-item{display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.25rem;background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:0.5rem;cursor:pointer;transition:all 0.18s}
     .task-item:hover:not(.locked){border-color:var(--border-warm);box-shadow:0 2px 8px rgba(0,0,0,0.05)}
     .task-item.done{background:var(--success-bg);border-color:var(--success-border)}
@@ -123,11 +130,14 @@
     .task-body{flex:1}
     .task-text{font-size:0.9rem;font-weight:400;color:var(--text);line-height:1.45}
     .task-item.done .task-text{color:var(--text-muted);text-decoration:line-through}
-    .task-time{font-size:0.68rem;color:var(--success);margin-top:3px;font-weight:500}
-    .btn-finalize{width:100%;padding:1rem;margin-top:1.25rem;background:var(--wine);color:white;border:none;border-radius:12px;font-family:var(--sans);font-size:0.95rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;transition:all 0.2s;box-shadow:0 4px 14px rgba(107,20,20,0.3)}
+    .task-meta{font-size:0.68rem;color:var(--success);margin-top:3px;font-weight:500}
+    .task-who{font-size:0.68rem;font-weight:600;color:var(--success);flex-shrink:0;align-self:center;background:var(--success-bg);border:1px solid var(--success-border);border-radius:20px;padding:2px 8px;white-space:nowrap}
+    .btn-finalize{width:100%;padding:1rem;margin-top:1.25rem;background:var(--wine);color:white;border:none;border-radius:12px;font-family:var(--sans);font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 14px rgba(107,20,20,0.3)}
     .btn-finalize:hover:not(:disabled){background:var(--wine-light);transform:translateY(-1px)}
     .btn-finalize:disabled{background:var(--cream-dark);color:var(--text-muted);box-shadow:none;cursor:not-allowed}
     .done-banner{text-align:center;padding:1.25rem;margin-top:1.25rem;background:var(--success-bg);border-radius:12px;border:1px solid var(--success-border);color:var(--success);font-weight:600}
+    .waiting-banner{background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:1.25rem;margin-top:1.25rem}
+    .waiting-title{font-size:0.85rem;font-weight:600;color:#92400e;margin-bottom:0.75rem}
 
     /* HISTORY */
     .history-item{background:white;border-radius:12px;border:1px solid var(--border);padding:1rem 1.25rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:1rem}
@@ -135,7 +145,7 @@
     .history-info{flex:1}
     .history-title{font-size:0.875rem;font-weight:500;color:var(--text)}
     .history-meta{font-size:0.75rem;color:var(--text-muted);margin-top:2px;font-weight:300}
-    .history-check{width:28px;height:28px;border-radius:50%;background:var(--success-bg);border:1px solid var(--success-border);display:flex;align-items:center;justify-content:center;color:var(--success);font-size:0.75rem;font-weight:700;flex-shrink:0}
+    .history-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;flex-shrink:0}
 
     /* ADMIN */
     .admin-card{background:white;border-radius:14px;border:1px solid var(--border);padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
@@ -160,7 +170,6 @@
     /* MISC */
     .empty-state{text-align:center;padding:4rem 1rem;color:var(--text-muted)}
     .empty-state-icon{font-size:3rem;margin-bottom:1rem;opacity:0.5}
-    .empty-state-text{font-size:0.95rem}
     .toast{position:fixed;bottom:1.75rem;right:1.75rem;background:var(--wine-deep);color:rgba(255,255,255,0.92);padding:0.875rem 1.25rem;border-radius:12px;font-size:0.875rem;font-weight:500;z-index:9999;border:1px solid rgba(201,169,110,0.2);box-shadow:0 8px 24px rgba(74,13,13,0.4);animation:slideUp 0.3s cubic-bezier(.4,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
     .overlay{display:none;position:fixed;inset:0;background:rgba(30,10,5,0.5);z-index:99}
@@ -184,6 +193,13 @@
 </head>
 <body>
 
+<!-- LOADING -->
+<div class="loading-overlay" id="loading" style="display:none">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Carregando...</div>
+</div>
+
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
     <div class="login-emblem">
@@ -194,12 +210,13 @@
     <div class="login-divider"><span>acesso da equipe</span></div>
     <div class="form-group"><label>Usuário</label><input type="text" id="login-user" placeholder="Seu primeiro nome" autocomplete="username"></div>
     <div class="form-group"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"></div>
-    <button class="btn-login" onclick="login()">Entrar no sistema</button>
+    <button class="btn-login" id="login-btn" onclick="login()">Entrar no sistema</button>
     <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
     <div class="login-hint">Use seu primeiro nome como usuário.<br>Senha padrão: <strong>1234</strong></div>
   </div>
 </div>
 
+<!-- APP -->
 <div id="app">
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
   <div class="sidebar" id="sidebar">
@@ -231,6 +248,7 @@
 <div class="toast" id="toast" style="display:none"></div>
 
 <script>
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const SECTORS=[
   {id:'cozinha', name:'Cozinha',      icon:'🍳',color:'#b45309'},
   {id:'salao',   name:'Salão',        icon:'🪑',color:'#1d4ed8'},
@@ -373,99 +391,286 @@ const DEFAULT_TASKS={
 }
 const ROLE_LABEL={admin:'Administrador',gerente:'Gerente',operador:'Operador'}
 const USER_COLORS=['#b45309','#1d4ed8','#7c3aed','#15803d','#0369a1','#be185d','#0f766e','#c2410c']
-const KEY={USERS:'chk_users',LOGS:'chk_logs',PROGRESS:'chk_progress',SESSION:'chk_session'}
-let currentUser=null,currentView='dashboard',viewParams={}
-function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
-function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 
-function init(){
-  let users=load(KEY.USERS,null)
-  if(!users){
-    users=[
-      {id:'u1',username:'nayara',  password:'1234',name:'Nayara',         role:'admin',  color:'#6b1414'},
-      {id:'u2',username:'simone',  password:'1234',name:'Simone',         role:'gerente',color:'#1d4ed8'},
-      {id:'u3',username:'felipe',  password:'1234',name:'Felipe Deivison',role:'operador',color:'#7c3aed'},
-      {id:'u4',username:'gabriele',password:'1234',name:'Gabriele',       role:'operador',color:'#15803d'},
-      {id:'u5',username:'thiago',  password:'1234',name:'Thiago',         role:'operador',color:'#b45309'},
-      {id:'u6',username:'leonardo',password:'1234',name:'Leonardo',       role:'operador',color:'#0369a1'},
-    ]
-    save(KEY.USERS,users)
-  }
-  const session=load(KEY.SESSION,null)
-  if(session){const user=load(KEY.USERS,[]).find(u=>u.id===session.id);if(user){currentUser=user;showApp();return}}
-  showLogin()
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let currentUser = null
+let STATE = { progress: [], logs: [], users: [] }
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function todayBR() {
+  return new Date().toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,10)
 }
-function showLogin(){document.getElementById('login-screen').style.display='flex';document.getElementById('app').style.display='none'}
-function showApp(){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';renderSidebar();updateUserDisplay();navigate('dashboard')}
-function login(){
-  const u=document.getElementById('login-user').value.trim()
-  const p=document.getElementById('login-pass').value
-  const user=load(KEY.USERS,[]).find(x=>x.username===u&&x.password===p)
-  if(user){currentUser=user;save(KEY.SESSION,{id:user.id});document.getElementById('login-error').style.display='none';showApp()}
-  else{document.getElementById('login-error').style.display='block';document.getElementById('login-pass').select()}
+function nowBrasilia() {
+  return new Date().toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T')+'-03:00'
 }
-function logout(){currentUser=null;localStorage.removeItem(KEY.SESSION);showLogin()}
-function navigate(view,params){
-  params=params||{};currentView=view;viewParams=params
-  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'))
-  if(view==='checklist'){const el=document.querySelector(`.nav-item[data-sector="${params.sectorId}"]`);if(el)el.classList.add('active')}
-  else{const el=document.querySelector(`.nav-item[data-view="${view}"]`);if(el)el.classList.add('active')}
-  document.getElementById('topbar-date').textContent=formatDateBR(new Date())
-  const content=document.getElementById('page-content'),title=document.getElementById('topbar-title')
-  if(view==='dashboard'){title.textContent='Dashboard';content.innerHTML=renderDashboard()}
-  else if(view==='checklist'){const s=SECTORS.find(s=>s.id===params.sectorId);title.textContent=s?s.name:'Checklist';content.innerHTML=renderChecklist(params.sectorId,params.type||'abertura')}
-  else if(view==='history'){title.textContent='Histórico';content.innerHTML=renderHistory()}
-  else if(view==='admin'){title.textContent='Administração';content.innerHTML=renderAdmin()}
-  closeSidebar();window.scrollTo(0,0)
+function formatTimeBR(iso) {
+  if(!iso) return ''
+  return new Date(iso).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'})
 }
-function renderSidebar(){
-  const nav=document.getElementById('sidebar-nav')
-  let html=`<div class="nav-item" data-view="dashboard" onclick="navigate('dashboard')"><span class="nav-item-icon">📊</span>Dashboard</div>`
-  html+=`<div class="nav-label">Setores</div>`
-  SECTORS.forEach(s=>{
-    const p=getSectorSummary(s.id),allDone=p.done===p.total
-    html+=`<div class="nav-item" data-sector="${s.id}" onclick="navigate('checklist',{sectorId:'${s.id}'})"><span class="nav-item-icon">${s.icon}</span>${s.name}<span class="nav-badge${allDone?' ok':''}">${allDone?'✓':p.done+'/'+p.total}</span></div>`
+function formatDateBR(d) {
+  return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'numeric',month:'long',year:'numeric'})
+}
+function formatDateTimeBR(iso) {
+  if(!iso) return ''
+  const d=new Date(iso)
+  return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})+' às '+d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'})
+}
+function formatDateLabel(ds) {
+  if(!ds) return 'Data desconhecida'
+  const today=todayBR()
+  const d=new Date(today+'T12:00:00');d.setDate(d.getDate()-1)
+  const yest=d.toISOString().slice(0,10)
+  if(ds===today) return 'Hoje'
+  if(ds===yest)  return 'Ontem'
+  const [y,m,day]=ds.split('-').map(Number)
+  return new Date(y,m-1,day).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})
+}
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
   })
-  html+=`<div class="nav-label">Geral</div>`
-  html+=`<div class="nav-item" data-view="history" onclick="navigate('history')"><span class="nav-item-icon">📋</span>Histórico</div>`
-  if(currentUser.role==='admin'||currentUser.role==='gerente')
-    html+=`<div class="nav-item" data-view="admin" onclick="navigate('admin')"><span class="nav-item-icon">⚙️</span>Administração</div>`
-  nav.innerHTML=html
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(err.error || res.statusText)
+  }
+  return res.json().catch(() => ({}))
 }
-function updateUserDisplay(){
-  const initials=currentUser.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
-  const av=document.getElementById('user-avatar');av.textContent=initials;av.style.background=currentUser.color||'#6b1414'
-  document.getElementById('user-name-display').textContent=currentUser.name
-  document.getElementById('user-role-display').textContent=ROLE_LABEL[currentUser.role]||currentUser.role
-  const b=document.getElementById('topbar-badge');if(b)b.textContent='🐰 '+currentUser.name
-}
-function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 
-function renderDashboard(){
-  let totalTasks=0,doneTasks=0,completedChecklists=0,totalChecklists=0
-  SECTORS.forEach(s=>{['abertura','fechamento'].forEach(type=>{
-    const tasks=DEFAULT_TASKS[s.id][type],prog=getProgress(s.id,type)
-    totalTasks+=tasks.length;doneTasks+=prog.done;totalChecklists++
-    if(prog.completed)completedChecklists++
-  })})
-  const pct=totalTasks>0?Math.round(doneTasks/totalTasks*100):0
-  const sectorsOK=SECTORS.filter(s=>getProgress(s.id,'abertura').completed&&getProgress(s.id,'fechamento').completed).length
-  let html=`<div class="stats-grid">
+function getProgress(sectorId, type) {
+  const today = todayBR()
+  const row = STATE.progress.find(p => p.sector_id===sectorId && p.type===type && p.date===today)
+  if (row) {
+    return {
+      date: row.date,
+      sectorId: row.sector_id,
+      type: row.type,
+      completedTasks: row.completed_tasks || [],
+      taskTimes: row.task_times || {},
+      taskUsers: row.task_users || {},
+      completed: row.completed || false,
+      completedBy: row.completed_by,
+      completedAt: row.completed_at,
+      approved: row.approved || false,
+      approvedBy: row.approved_by,
+      approvedAt: row.approved_at,
+      done: (row.completed_tasks || []).length
+    }
+  }
+  return { date:today, sectorId, type, completedTasks:[], taskTimes:{}, taskUsers:{}, completed:false, done:0 }
+}
+
+async function saveProgress(sectorId, type, prog) {
+  const payload = {
+    date: prog.date || todayBR(),
+    completed_tasks: prog.completedTasks,
+    task_times: prog.taskTimes,
+    task_users: prog.taskUsers,
+    completed: prog.completed || false,
+    completed_by: prog.completedBy || null,
+    completed_at: prog.completedAt || null,
+    approved: prog.approved || false,
+    approved_by: prog.approvedBy || null,
+    approved_at: prog.approvedAt || null
+  }
+  const row = await api('PUT', `/api/progress/${sectorId}/${type}`, payload)
+  // Update local state
+  const today = todayBR()
+  const idx = STATE.progress.findIndex(p => p.sector_id===sectorId && p.type===type && p.date===today)
+  if (idx !== -1) STATE.progress[idx] = row
+  else STATE.progress.push(row)
+}
+
+function getSectorSummary(sectorId) {
+  let done=0, total=0
+  ;['abertura','fechamento'].forEach(type => {
+    const tasks = DEFAULT_TASKS[sectorId][type]
+    const prog  = getProgress(sectorId, type)
+    total += tasks.length
+    done  += prog.done
+  })
+  return { done, total }
+}
+
+// ─── LOADING ──────────────────────────────────────────────────────────────────
+function showLoading(text) {
+  document.getElementById('loading').style.display = 'flex'
+  document.getElementById('loading-text').textContent = text || 'Carregando...'
+}
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none'
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+async function login() {
+  const username = document.getElementById('login-user').value.trim()
+  const password = document.getElementById('login-pass').value
+  const btn = document.getElementById('login-btn')
+  btn.disabled = true; btn.textContent = 'Entrando...'
+  try {
+    const { user } = await api('POST', '/api/login', { username, password })
+    currentUser = user
+    document.getElementById('login-error').style.display = 'none'
+    await loadAppData()
+    showApp()
+  } catch (e) {
+    document.getElementById('login-error').style.display = 'block'
+    document.getElementById('login-pass').select()
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar no sistema'
+  }
+}
+
+async function logout() {
+  await api('POST', '/api/logout').catch(() => {})
+  currentUser = null
+  STATE = { progress: [], logs: [], users: [] }
+  document.getElementById('app').style.display = 'none'
+  document.getElementById('login-screen').style.display = 'flex'
+}
+
+// ─── DATA LOADING ─────────────────────────────────────────────────────────────
+async function loadAppData() {
+  showLoading('Sincronizando dados...')
+  try {
+    const [progress, logs, users] = await Promise.all([
+      api('GET', `/api/progress?date=${todayBR()}`),
+      api('GET', '/api/logs'),
+      api('GET', '/api/users')
+    ])
+    STATE.progress = progress
+    STATE.logs = logs
+    STATE.users = users
+  } finally {
+    hideLoading()
+  }
+}
+
+async function refreshProgress() {
+  const progress = await api('GET', `/api/progress?date=${todayBR()}`)
+  STATE.progress = progress
+}
+
+// ─── APP SHOW ─────────────────────────────────────────────────────────────────
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none'
+  document.getElementById('app').style.display = 'block'
+  renderSidebar()
+  updateUserDisplay()
+  navigate('dashboard')
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+async function navigate(view, params) {
+  params = params || {}
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'))
+  if (view==='checklist') {
+    const el = document.querySelector(`.nav-item[data-sector="${params.sectorId}"]`)
+    if (el) el.classList.add('active')
+  } else {
+    const el = document.querySelector(`.nav-item[data-view="${view}"]`)
+    if (el) el.classList.add('active')
+  }
+  document.getElementById('topbar-date').textContent = formatDateBR(new Date())
+  const content = document.getElementById('page-content')
+  const title   = document.getElementById('topbar-title')
+
+  // Refresh data before rendering
+  showLoading('Atualizando...')
+  await refreshProgress()
+  if (view==='history') { STATE.logs = await api('GET', '/api/logs') }
+  hideLoading()
+
+  if (view==='dashboard') {
+    title.textContent = 'Dashboard'
+    content.innerHTML = renderDashboard()
+  } else if (view==='checklist') {
+    const s = SECTORS.find(s => s.id===params.sectorId)
+    title.textContent = s ? s.name : 'Checklist'
+    content.innerHTML = renderChecklist(params.sectorId, params.type || 'abertura')
+  } else if (view==='history') {
+    title.textContent = 'Histórico'
+    content.innerHTML = renderHistory()
+  } else if (view==='admin') {
+    STATE.users = await api('GET', '/api/users')
+    title.textContent = 'Administração'
+    content.innerHTML = renderAdmin()
+  }
+  closeSidebar()
+  window.scrollTo(0, 0)
+}
+
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav')
+  let html = `<div class="nav-item" data-view="dashboard" onclick="navigate('dashboard')"><span class="nav-item-icon">📊</span>Dashboard</div>`
+  html += `<div class="nav-label">Setores</div>`
+  SECTORS.forEach(s => {
+    const p = getSectorSummary(s.id), allDone = p.done===p.total && p.total>0
+    html += `<div class="nav-item" data-sector="${s.id}" onclick="navigate('checklist',{sectorId:'${s.id}'})">
+      <span class="nav-item-icon">${s.icon}</span>${s.name}
+      <span class="nav-badge${allDone?' ok':''}">${allDone?'✓':p.done+'/'+p.total}</span>
+    </div>`
+  })
+  html += `<div class="nav-label">Geral</div>`
+  html += `<div class="nav-item" data-view="history" onclick="navigate('history')"><span class="nav-item-icon">📋</span>Histórico</div>`
+  if (currentUser.role==='admin'||currentUser.role==='gerente')
+    html += `<div class="nav-item" data-view="admin" onclick="navigate('admin')"><span class="nav-item-icon">⚙️</span>Administração</div>`
+  nav.innerHTML = html
+}
+
+function updateUserDisplay() {
+  const initials = currentUser.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
+  const av = document.getElementById('user-avatar')
+  av.textContent = initials; av.style.background = currentUser.color || '#6b1414'
+  document.getElementById('user-name-display').textContent = currentUser.name
+  document.getElementById('user-role-display').textContent = ROLE_LABEL[currentUser.role] || currentUser.role
+  const b = document.getElementById('topbar-badge'); if(b) b.textContent = '🐰 '+currentUser.name
+}
+
+function openSidebar()  { document.getElementById('sidebar').classList.add('open');  document.getElementById('overlay').classList.add('show') }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show') }
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  let totalTasks=0, doneTasks=0, completedChecklists=0, totalChecklists=0
+  SECTORS.forEach(s => {
+    ['abertura','fechamento'].forEach(type => {
+      const tasks=DEFAULT_TASKS[s.id][type], prog=getProgress(s.id,type)
+      totalTasks+=tasks.length; doneTasks+=prog.done; totalChecklists++
+      if (prog.completed||prog.approved) completedChecklists++
+    })
+  })
+  const pct = totalTasks>0 ? Math.round(doneTasks/totalTasks*100) : 0
+  const sectorsOK = SECTORS.filter(s=>getProgress(s.id,'abertura').approved&&getProgress(s.id,'fechamento').approved).length
+
+  let html = `<div class="stats-grid">
     <div class="stat-card"><div class="stat-label">Progresso geral</div><div class="stat-value" style="color:${pct===100?'var(--success)':'var(--wine)'}">${pct}<span>%</span></div><div class="stat-sub">Hoje</div></div>
     <div class="stat-card"><div class="stat-label">Tarefas concluídas</div><div class="stat-value">${doneTasks}<span>/${totalTasks}</span></div><div class="stat-sub">No total hoje</div></div>
     <div class="stat-card"><div class="stat-label">Checklists finalizados</div><div class="stat-value">${completedChecklists}<span>/${totalChecklists}</span></div><div class="stat-sub">Abertura + fechamento</div></div>
-    <div class="stat-card"><div class="stat-label">Setores completos</div><div class="stat-value" style="color:${sectorsOK===SECTORS.length?'var(--success)':'var(--text)'}">${sectorsOK}<span>/${SECTORS.length}</span></div><div class="stat-sub">100% concluídos</div></div>
+    <div class="stat-card"><div class="stat-label">Setores aprovados</div><div class="stat-value" style="color:${sectorsOK===SECTORS.length?'var(--success)':'var(--text)'}">${sectorsOK}<span>/${SECTORS.length}</span></div><div class="stat-sub">Aprovados pela gerência</div></div>
   </div>`
-  html+=`<div class="section-label">Setores de hoje</div><div class="card-grid">`
-  SECTORS.forEach(s=>{
-    const ab=getProgress(s.id,'abertura'),fe=getProgress(s.id,'fechamento')
-    const abL=DEFAULT_TASKS[s.id].abertura.length,feL=DEFAULT_TASKS[s.id].fechamento.length
-    const total=ab.done+fe.done,totalL=abL+feL,p=Math.round(total/totalL*100)
-    const abPct=Math.round(ab.done/abL*100),fePct=Math.round(fe.done/feL*100)
-    const abPill=ab.completed?`<span class="pill pill-done">☀️ Abertura ✓</span>`:abPct>0?`<span class="pill pill-partial">☀️ ${abPct}%</span>`:`<span class="pill pill-pending">☀️ Abertura</span>`
-    const fePill=fe.completed?`<span class="pill pill-done">🌙 Fechamento ✓</span>`:fePct>0?`<span class="pill pill-partial">🌙 ${fePct}%</span>`:`<span class="pill pill-pending">🌙 Fechamento</span>`
-    html+=`<div class="sector-card" onclick="navigate('checklist',{sectorId:'${s.id}'})">
+
+  html += `<div class="section-label">Setores de hoje</div><div class="card-grid">`
+  SECTORS.forEach(s => {
+    const ab=getProgress(s.id,'abertura'), fe=getProgress(s.id,'fechamento')
+    const abL=DEFAULT_TASKS[s.id].abertura.length, feL=DEFAULT_TASKS[s.id].fechamento.length
+    const total=ab.done+fe.done, totalL=abL+feL, p=Math.round(total/totalL*100)
+    const abPct=Math.round(ab.done/abL*100), fePct=Math.round(fe.done/feL*100)
+
+    const abPill = ab.approved ? `<span class="pill pill-done">☀️ Aprovado ✓</span>` :
+                   ab.completed ? `<span class="pill pill-waiting">☀️ Aguard. aprovação</span>` :
+                   abPct>0 ? `<span class="pill pill-partial">☀️ ${abPct}%</span>` :
+                   `<span class="pill pill-pending">☀️ Abertura</span>`
+    const fePill = fe.approved ? `<span class="pill pill-done">🌙 Aprovado ✓</span>` :
+                   fe.completed ? `<span class="pill pill-waiting">🌙 Aguard. aprovação</span>` :
+                   fePct>0 ? `<span class="pill pill-partial">🌙 ${fePct}%</span>` :
+                   `<span class="pill pill-pending">🌙 Fechamento</span>`
+
+    html += `<div class="sector-card" onclick="navigate('checklist',{sectorId:'${s.id}'})">
       <div class="sector-accent" style="background:${s.color}"></div>
       <span class="sector-icon">${s.icon}</span>
       <div class="sector-name">${s.name}</div>
@@ -475,29 +680,70 @@ function renderDashboard(){
       <div class="sector-pills">${abPill}${fePill}</div>
     </div>`
   })
-  html+=`</div>`
-  const logs=load(KEY.LOGS,[]).slice(-5).reverse()
-  if(logs.length>0){
-    html+=`<div class="section-label">Últimas finalizações</div>`
-    logs.forEach(log=>{
-      const s=SECTORS.find(x=>x.id===log.sectorId)
-      html+=`<div class="history-item"><div class="history-icon">${s?s.icon:'📋'}</div><div class="history-info"><div class="history-title">${s?s.name:log.sectorId} — ${log.type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div><div class="history-meta">Por ${log.userName} · ${formatDateTimeBR(log.completedAt)}</div></div><div class="history-check">✓</div></div>`
+  html += `</div>`
+
+  const recent = STATE.logs.slice(0, 5)
+  if (recent.length > 0) {
+    html += `<div class="section-label">Últimas finalizações</div>`
+    recent.forEach(log => {
+      const s = SECTORS.find(x=>x.id===log.sector_id)
+      const approved = !!log.approved_by
+      html += `<div class="history-item">
+        <div class="history-icon">${s?s.icon:'📋'}</div>
+        <div class="history-info">
+          <div class="history-title">${s?s.name:log.sector_id} — ${log.type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div>
+          <div class="history-meta">Por ${log.user_name} · ${formatTimeBR(log.completed_at)}${log.approved_by?' · ✅ '+log.approved_by:''}</div>
+        </div>
+        <div class="history-badge" style="background:${approved?'var(--success-bg)':'#fefce8'};border:1px solid ${approved?'var(--success-border)':'#fde68a'};color:${approved?'var(--success)':'#92400e'}">${approved?'✅':'⏳'}</div>
+      </div>`
     })
   }
+
+  // Pending approvals for managers
+  if (currentUser.role==='admin'||currentUser.role==='gerente') {
+    const pending = []
+    SECTORS.forEach(s => {
+      ['abertura','fechamento'].forEach(type => {
+        const prog = getProgress(s.id, type)
+        if (prog.completed && !prog.approved) pending.push({s, type, prog})
+      })
+    })
+    if (pending.length > 0) {
+      html += `<div class="section-label">Aguardando sua aprovação</div>`
+      pending.forEach(({s, type, prog}) => {
+        html += `<div class="history-item" style="border-color:#fde68a;background:#fefce8;cursor:pointer" onclick="navigate('checklist',{sectorId:'${s.id}',type:'${type}'})">
+          <div class="history-icon">${s.icon}</div>
+          <div class="history-info">
+            <div class="history-title" style="color:#92400e">${s.name} — ${type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div>
+            <div class="history-meta">Finalizado por ${prog.completedBy} às ${formatTimeBR(prog.completedAt)} · Toque para aprovar</div>
+          </div>
+          <div class="history-badge" style="background:#fefce8;border:1px solid #fde68a;color:#92400e">⏳</div>
+        </div>`
+      })
+    }
+  }
+
   return html
 }
-function renderChecklist(sectorId,type){
-  const sector=SECTORS.find(s=>s.id===sectorId),tasks=DEFAULT_TASKS[sectorId][type],prog=getProgress(sectorId,type)
-  const pct=tasks.length>0?Math.round(prog.done/tasks.length*100):0
-  const allDone=prog.done===tasks.length,fillColor=prog.approved?'var(--success)':pct===100?'var(--wine-light)':sector?sector.color:'var(--wine)'
-  const canApprove=currentUser.role==='admin'||currentUser.role==='gerente'
-  const locked=prog.completed||prog.approved
 
-  let statusNote=''
-  if(prog.approved) statusNote=`<div class="progress-done-note">✅ Aprovado por ${prog.approvedBy} às ${formatTimeBR(prog.approvedAt)}</div>`
-  else if(prog.completed) statusNote=`<div class="progress-done-note" style="color:var(--gold)">⏳ Finalizado por ${prog.completedBy} às ${formatTimeBR(prog.completedAt)} — aguardando aprovação</div>`
+// ─── CHECKLIST ────────────────────────────────────────────────────────────────
+function renderChecklist(sectorId, type) {
+  const sector = SECTORS.find(s=>s.id===sectorId)
+  const tasks  = DEFAULT_TASKS[sectorId][type]
+  const prog   = getProgress(sectorId, type)
+  const pct    = tasks.length>0 ? Math.round(prog.done/tasks.length*100) : 0
+  const allDone = prog.done===tasks.length
+  const locked  = prog.completed || prog.approved
+  const canApprove = currentUser.role==='admin' || currentUser.role==='gerente'
+  const fillColor = prog.approved ? 'var(--success)' : pct===100 ? 'var(--wine-light)' : sector ? sector.color : 'var(--wine)'
 
-  let html=`<div class="type-tabs">
+  let statusNote = ''
+  if (prog.approved)
+    statusNote = `<div class="progress-done-note" style="color:var(--success)">✅ Aprovado por ${prog.approvedBy} às ${formatTimeBR(prog.approvedAt)}</div>`
+  else if (prog.completed)
+    statusNote = `<div class="progress-done-note" style="color:#92400e">⏳ Finalizado por ${prog.completedBy} às ${formatTimeBR(prog.completedAt)} — aguardando aprovação</div>`
+
+  let html = `<div class="type-tabs">
     <button class="type-tab ${type==='abertura'?'active':''}" onclick="navigate('checklist',{sectorId:'${sectorId}',type:'abertura'})">☀️ Abertura</button>
     <button class="type-tab ${type==='fechamento'?'active':''}" onclick="navigate('checklist',{sectorId:'${sectorId}',type:'fechamento'})">🌙 Fechamento</button>
   </div>
@@ -510,143 +756,178 @@ function renderChecklist(sectorId,type){
     ${statusNote}
   </div>`
 
-  tasks.forEach(task=>{
-    const done=prog.completedTasks.includes(task.id)
-    const time=prog.taskTimes&&prog.taskTimes[task.id]
-    const who=prog.taskUsers&&prog.taskUsers[task.id]
-    html+=`<div class="task-item ${done?'done':''} ${locked?'locked':''}" onclick="${locked?'':` toggleTask('${sectorId}','${type}','${task.id}')`}">
+  tasks.forEach(task => {
+    const done = prog.completedTasks.includes(task.id)
+    const time = prog.taskTimes && prog.taskTimes[task.id]
+    const who  = prog.taskUsers && prog.taskUsers[task.id]
+    html += `<div class="task-item ${done?'done':''} ${locked?'locked':''}" onclick="${locked?'':` toggleTask('${sectorId}','${type}','${task.id}')`}">
       <div class="task-check"><span class="check-mark">✓</span></div>
       <div class="task-body">
         <div class="task-text">${task.text}</div>
-        ${done&&who?`<div class="task-time">✓ ${who} · ${formatTimeBR(time)}</div>`:''}
+        ${done&&who ? `<div class="task-meta">✓ ${who} · ${formatTimeBR(time)}</div>` : ''}
       </div>
-      ${done&&who?`<div style="font-size:0.68rem;font-weight:600;color:var(--success);flex-shrink:0;align-self:center;background:var(--success-bg);border:1px solid var(--success-border);border-radius:20px;padding:2px 8px">${who}</div>`:''}
+      ${done&&who ? `<span class="task-who">${who}</span>` : ''}
     </div>`
   })
 
-  if(prog.approved){
-    html+=`<div class="done-banner">✅ Checklist aprovado por ${prog.approvedBy} às ${formatTimeBR(prog.approvedAt)}</div>`
-  } else if(prog.completed){
-    if(canApprove){
-      html+=`<div style="background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:1.25rem;margin-top:1.25rem">
-        <div style="font-size:0.85rem;font-weight:600;color:#92400e;margin-bottom:0.75rem">⏳ Aguardando sua aprovação — ${prog.completedBy} finalizou às ${formatTimeBR(prog.completedAt)}</div>
+  if (prog.approved) {
+    html += `<div class="done-banner">✅ Checklist aprovado por ${prog.approvedBy} às ${formatTimeBR(prog.approvedAt)}</div>`
+  } else if (prog.completed) {
+    if (canApprove) {
+      html += `<div class="waiting-banner">
+        <div class="waiting-title">⏳ ${prog.completedBy} finalizou às ${formatTimeBR(prog.completedAt)} — aguardando sua aprovação</div>
         <button class="btn-finalize" style="background:var(--success);box-shadow:0 4px 14px rgba(45,122,79,0.35)" onclick="approveChecklist('${sectorId}','${type}')">✅ Aprovar checklist — ${currentUser.name}</button>
       </div>`
     } else {
-      html+=`<div style="background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:1.25rem;margin-top:1.25rem;text-align:center;color:#92400e;font-size:0.875rem;font-weight:500">⏳ Aguardando aprovação da gerência</div>`
+      html += `<div class="waiting-banner"><div class="waiting-title" style="text-align:center">⏳ Aguardando aprovação da gerência</div></div>`
     }
   } else {
-    html+=`<button class="btn-finalize" ${allDone?'':'disabled'} onclick="markComplete('${sectorId}','${type}')">
-      ${allDone?`✓ Finalizar checklist — ${currentUser.name}`:`Conclua todas as ${tasks.length} tarefas para finalizar`}
+    html += `<button class="btn-finalize" ${allDone?'':'disabled'} onclick="markComplete('${sectorId}','${type}')">
+      ${allDone ? `✓ Finalizar checklist — ${currentUser.name}` : `Conclua todas as ${tasks.length} tarefas para finalizar`}
     </button>`
   }
   return html
 }
-function nowBrasilia(){
-  return new Date().toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).replace(' ','T')+'-03:00'
-}
-function toggleTask(sectorId,type,taskId){
-  const prog=getProgress(sectorId,type);if(prog.completed||prog.approved)return
-  const idx=prog.completedTasks.indexOf(taskId)
-  if(!prog.taskTimes)prog.taskTimes={}
-  if(!prog.taskUsers)prog.taskUsers={}
-  if(idx===-1){
-    const task=DEFAULT_TASKS[sectorId][type].find(t=>t.id===taskId)
-    if(!confirm(`Confirmar conclusão?
 
-"${task?task.text:''}"
+// ─── TASK ACTIONS ─────────────────────────────────────────────────────────────
+async function toggleTask(sectorId, type, taskId) {
+  const prog = getProgress(sectorId, type)
+  if (prog.completed || prog.approved) return
+  const idx = prog.completedTasks.indexOf(taskId)
+  if (!prog.taskTimes) prog.taskTimes = {}
+  if (!prog.taskUsers) prog.taskUsers = {}
 
-Responsável: ${currentUser.name}`))return
+  if (idx === -1) {
+    const task = DEFAULT_TASKS[sectorId][type].find(t => t.id===taskId)
+    if (!confirm(`Confirmar conclusão?\n\n"${task ? task.text : ''}"\n\nResponsável: ${currentUser.name}`)) return
     prog.completedTasks.push(taskId)
-    prog.taskTimes[taskId]=nowBrasilia()
-    prog.taskUsers[taskId]=currentUser.name
+    prog.taskTimes[taskId] = nowBrasilia()
+    prog.taskUsers[taskId] = currentUser.name
   } else {
-    if(!confirm('Desmarcar esta tarefa?'))return
-    prog.completedTasks.splice(idx,1)
+    if (!confirm('Desmarcar esta tarefa?')) return
+    prog.completedTasks.splice(idx, 1)
     delete prog.taskTimes[taskId]
     delete prog.taskUsers[taskId]
   }
-  saveProgress(sectorId,type,prog);navigate('checklist',{sectorId,type});renderSidebar()
+  showLoading('Salvando...')
+  try {
+    await saveProgress(sectorId, type, prog)
+    renderSidebar()
+    document.getElementById('page-content').innerHTML = renderChecklist(sectorId, type)
+  } finally { hideLoading() }
 }
-function markComplete(sectorId,type){
-  const prog=getProgress(sectorId,type),tasks=DEFAULT_TASKS[sectorId][type]
-  if(prog.done<tasks.length)return
-  prog.completed=true;prog.completedBy=currentUser.name;prog.completedAt=nowBrasilia()
-  saveProgress(sectorId,type,prog)
-  const sector=SECTORS.find(s=>s.id===sectorId)
-  toast(`✓ ${sector?sector.name:sectorId} — ${type} finalizado! Aguardando aprovação.`)
-  navigate('checklist',{sectorId,type});renderSidebar()
+
+async function markComplete(sectorId, type) {
+  const prog  = getProgress(sectorId, type)
+  const tasks = DEFAULT_TASKS[sectorId][type]
+  if (prog.done < tasks.length) return
+  if (!confirm(`Finalizar checklist de ${type}?\n\nResponsável: ${currentUser.name}`)) return
+  prog.completed   = true
+  prog.completedBy = currentUser.name
+  prog.completedAt = nowBrasilia()
+  showLoading('Finalizando...')
+  try {
+    await saveProgress(sectorId, type, prog)
+    const sector = SECTORS.find(s => s.id===sectorId)
+    toast(`✓ ${sector?sector.name:sectorId} — ${type} finalizado! Aguardando aprovação.`)
+    renderSidebar()
+    document.getElementById('page-content').innerHTML = renderChecklist(sectorId, type)
+  } finally { hideLoading() }
 }
-function approveChecklist(sectorId,type){
-  const prog=getProgress(sectorId,type)
-  if(!prog.completed||prog.approved)return
-  prog.approved=true;prog.approvedBy=currentUser.name;prog.approvedAt=nowBrasilia()
-  saveProgress(sectorId,type,prog)
-  const tasks=DEFAULT_TASKS[sectorId][type]
-  const logs=load(KEY.LOGS,[])
-  logs.push({id:Date.now(),sectorId,type,date:getTodayKey(),userName:prog.completedBy,approvedBy:currentUser.name,completedAt:prog.completedAt,approvedAt:prog.approvedAt,taskCount:tasks.length})
-  save(KEY.LOGS,logs)
-  toast(`✓ Aprovado por ${currentUser.name}!`)
-  navigate('checklist',{sectorId,type});renderSidebar()
+
+async function approveChecklist(sectorId, type) {
+  const prog = getProgress(sectorId, type)
+  if (!prog.completed || prog.approved) return
+  if (!confirm(`Aprovar checklist de ${type}?\n\nAprovado por: ${currentUser.name}`)) return
+  prog.approved   = true
+  prog.approvedBy = currentUser.name
+  prog.approvedAt = nowBrasilia()
+  showLoading('Aprovando...')
+  try {
+    await saveProgress(sectorId, type, prog)
+    const tasks = DEFAULT_TASKS[sectorId][type]
+    await api('POST', '/api/logs', {
+      id: Date.now(),
+      sector_id: sectorId,
+      type,
+      date: todayBR(),
+      user_name: prog.completedBy,
+      approved_by: currentUser.name,
+      completed_at: prog.completedAt,
+      approved_at: prog.approvedAt,
+      task_count: tasks.length
+    })
+    STATE.logs = await api('GET', '/api/logs')
+    const sector = SECTORS.find(s => s.id===sectorId)
+    toast(`✅ ${sector?sector.name:sectorId} — ${type} aprovado!`)
+    renderSidebar()
+    document.getElementById('page-content').innerHTML = renderChecklist(sectorId, type)
+  } finally { hideLoading() }
 }
-function renderHistory(){
-  // Build entries from logs (approved) + pending progress (completed not yet approved)
-  const logs=load(KEY.LOGS,[]).slice().reverse()
-  const today=getTodayKey()
-  // Add pending (completed but not approved) entries from today
-  let pending=[]
-  SECTORS.forEach(s=>{
-    ['abertura','fechamento'].forEach(type=>{
-      const prog=getProgress(s.id,type)
-      if(prog.completed&&!prog.approved){
-        pending.push({_pending:true,sectorId:s.id,type,date:today,userName:prog.completedBy,completedAt:prog.completedAt,taskCount:DEFAULT_TASKS[s.id][type].length})
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────────
+function renderHistory() {
+  // Combine approved logs + pending (completed but not approved)
+  const pending = []
+  SECTORS.forEach(s => {
+    ['abertura','fechamento'].forEach(type => {
+      const prog = getProgress(s.id, type)
+      if (prog.completed && !prog.approved) {
+        pending.push({ _pending:true, sector_id:s.id, type, date:todayBR(), user_name:prog.completedBy, completed_at:prog.completedAt, task_count:DEFAULT_TASKS[s.id][type].length })
       }
     })
   })
-  const allEntries=[...pending,...logs]
-  if(allEntries.length===0)return`<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Nenhum checklist finalizado ainda.</div></div>`
-  let html='',lastDate=''
-  allEntries.forEach(log=>{
-    const sector=SECTORS.find(s=>s.id===log.sectorId),date=log.date||(log.completedAt?log.completedAt.slice(0,10):'')
-    if(date!==lastDate){html+=`<div class="section-label">${formatDateLabel(date)}</div>`;lastDate=date}
-    const statusIcon=log._pending?'⏳':'✅'
-    const statusColor=log._pending?'#92400e':'var(--success)'
-    const statusBg=log._pending?'#fefce8':'var(--success-bg)'
-    const statusBorder=log._pending?'#fde68a':'var(--success-border)'
-    const approvedNote=log.approvedBy?` · ✅ Aprovado por ${log.approvedBy}`:log._pending?' · Aguardando aprovação':''
-    html+=`<div class="history-item">
+  const all = [...pending, ...STATE.logs]
+  if (all.length === 0) return `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Nenhum checklist finalizado ainda.</div></div>`
+  let html = '', lastDate = ''
+  all.forEach(log => {
+    const sector = SECTORS.find(s=>s.id===log.sector_id)
+    const date   = log.date || (log.completed_at ? log.completed_at.slice(0,10) : '')
+    if (date !== lastDate) { html += `<div class="section-label">${formatDateLabel(date)}</div>`; lastDate = date }
+    const approved = !!log.approved_by
+    html += `<div class="history-item">
       <div class="history-icon">${sector?sector.icon:'📋'}</div>
       <div class="history-info">
-        <div class="history-title">${sector?sector.name:log.sectorId} — ${log.type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div>
-        <div class="history-meta">Feito por ${log.userName} · ${formatTimeBR(log.completedAt)} · ${log.taskCount} tarefas${approvedNote}</div>
+        <div class="history-title">${sector?sector.name:log.sector_id} — ${log.type==='abertura'?'☀️ Abertura':'🌙 Fechamento'}</div>
+        <div class="history-meta">Feito por ${log.user_name} · ${formatTimeBR(log.completed_at)} · ${log.task_count} tarefas${log.approved_by?' · ✅ Aprovado por '+log.approved_by:' · ⏳ Aguard. aprovação'}</div>
       </div>
-      <div style="width:28px;height:28px;border-radius:50%;background:${statusBg};border:1px solid ${statusBorder};display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:${statusColor};flex-shrink:0">${statusIcon}</div>
+      <div class="history-badge" style="background:${approved?'var(--success-bg)':'#fefce8'};border:1px solid ${approved?'var(--success-border)':'#fde68a'};color:${approved?'var(--success)':'#92400e'}">${approved?'✅':'⏳'}</div>
     </div>`
   })
   return html
 }
-function renderAdmin(){
-  const users=load(KEY.USERS,[]),logs=load(KEY.LOGS,[])
-  const usersHtml=users.map(u=>{
-    const initials=u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
-    return`<div class="user-row"><div class="user-row-avatar" style="background:${u.color||'#6b1414'}">${initials}</div><div style="flex:1"><div class="user-row-name">${u.name}</div><div class="user-row-meta">@${u.username} · ${ROLE_LABEL[u.role]||u.role}</div></div>${u.id!==currentUser.id?`<button class="btn-sm danger" onclick="deleteUser('${u.id}')">Remover</button>`:`<span style="font-size:0.72rem;color:var(--text-muted)">Você</span>`}</div>`
+
+// ─── ADMIN ────────────────────────────────────────────────────────────────────
+function renderAdmin() {
+  const usersHtml = STATE.users.map(u => {
+    const initials = u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
+    return `<div class="user-row">
+      <div class="user-row-avatar" style="background:${u.color||'#6b1414'}">${initials}</div>
+      <div style="flex:1"><div class="user-row-name">${u.name}</div><div class="user-row-meta">@${u.username} · ${ROLE_LABEL[u.role]||u.role}</div></div>
+      ${u.id!==currentUser.id ? `<button class="btn-sm danger" onclick="deleteUser('${u.id}')">Remover</button>` : `<span style="font-size:0.72rem;color:var(--text-muted)">Você</span>`}
+    </div>`
   }).join('')
-  return`<div class="admin-card"><div class="admin-card-title">👥 Equipe cadastrada</div>${usersHtml}
+
+  return `<div class="admin-card"><div class="admin-card-title">👥 Equipe cadastrada</div>${usersHtml}
     <div style="padding-top:1.25rem;border-top:1px solid var(--border);margin-top:0.25rem">
       <div style="font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">Adicionar novo usuário</div>
       <div class="inline-form">
         <input class="input-field" id="new-name" placeholder="Nome completo" style="flex:1;min-width:140px">
         <input class="input-field" id="new-user" placeholder="Login" style="width:120px">
         <input class="input-field" id="new-pass" placeholder="Senha" type="password" style="width:90px">
-        <select class="input-field" id="new-role" style="width:105px"><option value="operador">Operador</option><option value="gerente">Gerente</option><option value="admin">Admin</option></select>
+        <select class="input-field" id="new-role" style="width:105px">
+          <option value="operador">Operador</option>
+          <option value="gerente">Gerente</option>
+          <option value="admin">Admin</option>
+        </select>
         <button class="btn-sm" onclick="addUser()" style="background:var(--wine);color:white;border-color:var(--wine);padding:0.55rem 1rem">+ Adicionar</button>
       </div>
     </div>
   </div>
   <div class="admin-card"><div class="admin-card-title">📊 Resumo</div>
     <div class="summary-row">
-      <div class="summary-box"><div class="summary-box-label">Finalizações totais</div><div class="summary-box-value">${logs.length}</div></div>
-      <div class="summary-box"><div class="summary-box-label">Usuários cadastrados</div><div class="summary-box-value">${users.length}</div></div>
+      <div class="summary-box"><div class="summary-box-label">Finalizações totais</div><div class="summary-box-value">${STATE.logs.length}</div></div>
+      <div class="summary-box"><div class="summary-box-label">Usuários cadastrados</div><div class="summary-box-value">${STATE.users.length}</div></div>
     </div>
   </div>
   <div class="admin-card"><div class="admin-card-title">🔄 Reiniciar checklists</div>
@@ -654,63 +935,73 @@ function renderAdmin(){
     <button class="btn-sm danger" onclick="resetToday()">🔄 Reiniciar checklists de hoje</button>
   </div>`
 }
-function addUser(){
-  const name=document.getElementById('new-name').value.trim(),username=document.getElementById('new-user').value.trim()
-  const password=document.getElementById('new-pass').value,role=document.getElementById('new-role').value
-  if(!name||!username||!password){toast('⚠️ Preencha todos os campos');return}
-  const users=load(KEY.USERS,[])
-  if(users.find(u=>u.username===username)){toast('⚠️ Usuário já existe');return}
-  users.push({id:'u'+Date.now(),username,password,name,role,color:USER_COLORS[users.length%USER_COLORS.length]})
-  save(KEY.USERS,users);toast('✓ Usuário adicionado!');navigate('admin');renderSidebar()
+
+async function addUser() {
+  const name     = document.getElementById('new-name').value.trim()
+  const username = document.getElementById('new-user').value.trim()
+  const password = document.getElementById('new-pass').value
+  const role     = document.getElementById('new-role').value
+  if (!name||!username||!password) { toast('⚠️ Preencha todos os campos'); return }
+  showLoading('Criando usuário...')
+  try {
+    await api('POST', '/api/users', { id:'u'+Date.now(), username, password, name, role, color:USER_COLORS[STATE.users.length%USER_COLORS.length] })
+    STATE.users = await api('GET', '/api/users')
+    toast('✓ Usuário adicionado!')
+    document.getElementById('page-content').innerHTML = renderAdmin()
+    renderSidebar()
+  } catch (e) {
+    toast('⚠️ ' + e.message)
+  } finally { hideLoading() }
 }
-function deleteUser(id){
-  if(!confirm('Remover este usuário?'))return
-  save(KEY.USERS,load(KEY.USERS,[]).filter(u=>u.id!==id));toast('Usuário removido.');navigate('admin');renderSidebar()
+
+async function deleteUser(id) {
+  if (!confirm('Remover este usuário?')) return
+  showLoading('Removendo...')
+  try {
+    await api('DELETE', `/api/users/${id}`)
+    STATE.users = await api('GET', '/api/users')
+    toast('Usuário removido.')
+    document.getElementById('page-content').innerHTML = renderAdmin()
+  } finally { hideLoading() }
 }
-function resetToday(){
-  if(!confirm('Reiniciar todos os checklists de hoje?\n\nO histórico será mantido.'))return
-  save(KEY.PROGRESS,load(KEY.PROGRESS,[]).filter(p=>p.date!==getTodayKey()))
-  toast('✓ Checklists reiniciados!');navigate('dashboard');renderSidebar()
+
+async function resetToday() {
+  if (!confirm('Reiniciar todos os checklists de hoje?\n\nO histórico será mantido.')) return
+  showLoading('Reiniciando...')
+  try {
+    await api('DELETE', '/api/progress/today')
+    STATE.progress = []
+    toast('✓ Checklists reiniciados!')
+    renderSidebar()
+    navigate('dashboard')
+  } finally { hideLoading() }
 }
-function getProgress(sectorId,type){
-  const today=getTodayKey(),all=load(KEY.PROGRESS,[])
-  const found=all.find(p=>p.date===today&&p.sectorId===sectorId&&p.type===type)
-  if(found){found.done=found.completedTasks.length;return found}
-  return{date:today,sectorId,type,completedTasks:[],taskTimes:{},completed:false,done:0}
-}
-function saveProgress(sectorId,type,prog){
-  const today=getTodayKey();let all=load(KEY.PROGRESS,[])
-  const idx=all.findIndex(p=>p.date===today&&p.sectorId===sectorId&&p.type===type)
-  if(idx!==-1)all[idx]=prog;else all.push(prog)
-  save(KEY.PROGRESS,all)
-}
-function getSectorSummary(sectorId){
-  let done=0,total=0
-  ;['abertura','fechamento'].forEach(type=>{const tasks=DEFAULT_TASKS[sectorId][type],prog=getProgress(sectorId,type);total+=tasks.length;done+=prog.done})
-  return{done,total}
-}
-function getTodayKey(){return new Date().toLocaleString('sv-SE',{timeZone:'America/Sao_Paulo'}).slice(0,10)}
-function formatDateBR(d){return d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
-function formatTimeBR(iso){if(!iso)return'';return new Date(iso).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'})}
-function formatDateTimeBR(iso){if(!iso)return'';const d=new Date(iso);return d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})+' às '+d.toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'})}
-function formatDateLabel(ds){
-  if(!ds)return'Data desconhecida'
-  const today=getTodayKey(),d=new Date(today);d.setDate(d.getDate()-1);const yest=d.toISOString().slice(0,10)
-  if(ds===today)return'Hoje';if(ds===yest)return'Ontem'
-  const[y,m,day]=ds.split('-').map(Number)
-  return new Date(y,m-1,day).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})
-}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
 let toastTimer
-function toast(msg){
-  const el=document.getElementById('toast');el.textContent=msg;el.style.display='block'
-  el.style.animation='none';void el.offsetWidth;el.style.animation=''
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.style.display='none'},3000)
+function toast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.style.display = 'block'
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.style.display = 'none' }, 3500)
 }
-document.addEventListener('DOMContentLoaded',()=>{
-  const p=document.getElementById('login-pass'),u=document.getElementById('login-user')
-  if(p)p.addEventListener('keypress',e=>{if(e.key==='Enter')login()})
-  if(u)u.addEventListener('keypress',e=>{if(e.key==='Enter')p.focus()})
-  init()
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  const p = document.getElementById('login-pass'), u = document.getElementById('login-user')
+  if (p) p.addEventListener('keypress', e => { if(e.key==='Enter') login() })
+  if (u) u.addEventListener('keypress', e => { if(e.key==='Enter') p.focus() })
+
+  // Check if already logged in
+  showLoading('Verificando sessão...')
+  try {
+    const { user } = await api('GET', '/api/me')
+    currentUser = user
+    await loadAppData()
+    showApp()
+  } catch {
+    hideLoading()
+    document.getElementById('login-screen').style.display = 'flex'
+  }
 })
 </script>
 </body>
