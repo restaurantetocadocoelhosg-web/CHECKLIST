@@ -537,21 +537,28 @@ async function loadAppData() {
   showLoading('Sincronizando dados...')
   try {
     const [progress, logs, users] = await Promise.all([
-      api('GET', `/api/progress?date=${todayBR()}`),
-      api('GET', '/api/logs'),
-      api('GET', '/api/users')
+      api('GET', `/api/progress?date=${todayBR()}`).catch(()=>[]),
+      api('GET', '/api/logs').catch(()=>[]),
+      api('GET', '/api/users').catch(()=>[])
     ])
-    STATE.progress = progress
-    STATE.logs = logs
-    STATE.users = users
+    STATE.progress = Array.isArray(progress) ? progress : []
+    STATE.logs     = Array.isArray(logs) ? logs : []
+    STATE.users    = Array.isArray(users) ? users : []
+  } catch(e) {
+    console.error('Erro ao carregar dados:', e)
+    STATE.progress = []; STATE.logs = []; STATE.users = []
   } finally {
     hideLoading()
   }
 }
 
 async function refreshProgress() {
-  const progress = await api('GET', `/api/progress?date=${todayBR()}`)
-  STATE.progress = progress
+  try {
+    const progress = await api('GET', `/api/progress?date=${todayBR()}`)
+    STATE.progress = Array.isArray(progress) ? progress : []
+  } catch(e) {
+    console.error('Erro ao atualizar progresso:', e)
+  }
 }
 
 // ─── APP SHOW ─────────────────────────────────────────────────────────────────
@@ -580,9 +587,15 @@ async function navigate(view, params) {
 
   // Refresh data before rendering
   showLoading('Atualizando...')
-  await refreshProgress()
-  if (view==='history') { STATE.logs = await api('GET', '/api/logs') }
-  hideLoading()
+  try {
+    await refreshProgress()
+    if (view==='history') { STATE.logs = await api('GET', '/api/logs') }
+    if (view==='admin')   { STATE.users = await api('GET', '/api/users') }
+  } catch(e) {
+    console.error('Erro ao carregar dados:', e)
+  } finally {
+    hideLoading()
+  }
 
   if (view==='dashboard') {
     title.textContent = 'Dashboard'
@@ -595,7 +608,6 @@ async function navigate(view, params) {
     title.textContent = 'Histórico'
     content.innerHTML = renderHistory()
   } else if (view==='admin') {
-    STATE.users = await api('GET', '/api/users')
     title.textContent = 'Administração'
     content.innerHTML = renderAdmin()
   }
