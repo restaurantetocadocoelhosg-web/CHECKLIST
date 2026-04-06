@@ -88,7 +88,7 @@ if (!adminExists) {
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────────────────────
 app.use(express.json())
-app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(__dirname))
 app.use(session({
   secret: process.env.SESSION_SECRET || 'toca-do-coelho-checklist-2025',
   resave: false,
@@ -263,7 +263,7 @@ app.get('/api/logs', requireAuth, (req, res) => {
 
 // ─── FRONTEND ─────────────────────────────────────────────────────────────────
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'))
+  res.sendFile(path.join(__dirname, 'index.html'))
 })
 
 // ─── START ────────────────────────────────────────────────────────────────────
