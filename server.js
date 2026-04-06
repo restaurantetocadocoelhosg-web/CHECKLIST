@@ -1,245 +1,273 @@
-const express = require('express');
-const { Pool }  = require('pg');
-const session   = require('express-session');
-const path      = require('path');
-const fs        = require('fs');
+// ─── CHECKLIST TOCA DO COELHO ─────────────────────────────────────────────────
+// server.js — Node.js + Express + SQLite (sem PostgreSQL)
+// ─────────────────────────────────────────────────────────────────────────────
+const express  = require('express')
+const session  = require('express-session')
+const Database = require('better-sqlite3')
+const path     = require('path')
+const fs       = require('fs')
 
-const app  = express();
-const PORT = process.env.PORT || 3000;
+const app  = express()
+const PORT = process.env.PORT || 3000
 
-// ─── DATABASE ────────────────────────────────────────────────────────────────
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+// ─── BANCO DE DADOS ───────────────────────────────────────────────────────────
+const DB_DIR  = path.join(__dirname, 'data')
+const DB_PATH = path.join(DB_DIR, 'checklist.db')
+if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true })
 
-async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id      TEXT PRIMARY KEY,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      name    TEXT NOT NULL,
-      role    TEXT NOT NULL DEFAULT 'operador',
-      color   TEXT DEFAULT '#6b1414'
-    );
+const db = new Database(DB_PATH)
+db.pragma('journal_mode = WAL')
+db.pragma('foreign_keys = ON')
 
-    CREATE TABLE IF NOT EXISTS progress (
-      id              SERIAL PRIMARY KEY,
-      date            TEXT NOT NULL,
-      sector_id       TEXT NOT NULL,
-      type            TEXT NOT NULL,
-      completed_tasks JSONB DEFAULT '[]',
-      task_times      JSONB DEFAULT '{}',
-      task_users      JSONB DEFAULT '{}',
-      completed       BOOLEAN DEFAULT false,
-      completed_by    TEXT,
-      completed_at    TEXT,
-      approved        BOOLEAN DEFAULT false,
-      approved_by     TEXT,
-      approved_at     TEXT,
-      UNIQUE(date, sector_id, type)
-    );
+// ─── CRIAR TABELAS ────────────────────────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id         TEXT PRIMARY KEY,
+    username   TEXT UNIQUE NOT NULL,
+    password   TEXT NOT NULL,
+    name       TEXT NOT NULL,
+    role       TEXT NOT NULL DEFAULT 'operador',
+    color      TEXT DEFAULT '#6b1414',
+    created_at TEXT DEFAULT (datetime('now'))
+  );
 
-    CREATE TABLE IF NOT EXISTS logs (
-      id           BIGINT PRIMARY KEY,
-      sector_id    TEXT NOT NULL,
-      type         TEXT NOT NULL,
-      date         TEXT NOT NULL,
-      user_name    TEXT NOT NULL,
-      approved_by  TEXT,
-      completed_at TEXT,
-      approved_at  TEXT,
-      task_count   INTEGER DEFAULT 0,
-      created_at   TIMESTAMP DEFAULT NOW()
-    );
-  `);
+  CREATE TABLE IF NOT EXISTS progress (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    date            TEXT NOT NULL,
+    sector_id       TEXT NOT NULL,
+    type            TEXT NOT NULL,
+    completed_tasks TEXT DEFAULT '[]',
+    task_times      TEXT DEFAULT '{}',
+    task_users      TEXT DEFAULT '{}',
+    completed       INTEGER DEFAULT 0,
+    completed_by    TEXT,
+    completed_at    TEXT,
+    approved        INTEGER DEFAULT 0,
+    approved_by     TEXT,
+    approved_at     TEXT,
+    UNIQUE(date, sector_id, type)
+  );
 
-  // Seed default users if none exist
-  const { rows } = await pool.query('SELECT COUNT(*) FROM users');
-  if (parseInt(rows[0].count) === 0) {
-    const users = [
-      { id:'u1', username:'nayara',   password:'1234', name:'Nayara',          role:'admin',    color:'#6b1414' },
-      { id:'u2', username:'simone',   password:'1234', name:'Simone',          role:'gerente',  color:'#1d4ed8' },
-      { id:'u3', username:'felipe',   password:'1234', name:'Felipe Deivison', role:'operador', color:'#7c3aed' },
-      { id:'u4', username:'gabriele', password:'1234', name:'Gabriele',        role:'operador', color:'#15803d' },
-      { id:'u5', username:'thiago',   password:'1234', name:'Thiago',          role:'operador', color:'#b45309' },
-      { id:'u6', username:'leonardo', password:'1234', name:'Leonardo',        role:'operador', color:'#0369a1' },
-    ];
-    for (const u of users) {
-      await pool.query(
-        'INSERT INTO users (id,username,password,name,role,color) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING',
-        [u.id, u.username, u.password, u.name, u.role, u.color]
-      );
-    }
-    console.log('Default users created.');
+  CREATE TABLE IF NOT EXISTS logs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    date        TEXT NOT NULL,
+    sector_id   TEXT NOT NULL,
+    type        TEXT NOT NULL,
+    user_id     TEXT,
+    user_name   TEXT,
+    action      TEXT NOT NULL,
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+`)
+
+// Criar usuário admin padrão se não existir
+const adminExists = db.prepare('SELECT id FROM users WHERE username = ?').get('admin')
+if (!adminExists) {
+  db.prepare(`
+    INSERT INTO users (id, username, password, name, role, color)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run('admin-001', 'admin', '1234', 'Administrador', 'admin', '#6b1414')
+
+  // Criar usuários padrão da equipe
+  const equipe = [
+    { id:'u-nayara',  username:'nayara',  name:'Nayara',  role:'admin',    color:'#b45309' },
+    { id:'u-simone',  username:'simone',  name:'Simone',  role:'gerente',  color:'#7c3aed' },
+    { id:'u-daniel',  username:'daniel',  name:'Daniel',  role:'operador', color:'#1d4ed8' },
+    { id:'u-julia',   username:'julia',   name:'Julia',   role:'operador', color:'#0369a1' },
+    { id:'u-larissa', username:'larissa', name:'Larissa', role:'operador', color:'#be185d' },
+    { id:'u-leonardo',username:'leonardo',name:'Leonardo',role:'operador', color:'#0f766e' },
+  ]
+  const insertUser = db.prepare(`
+    INSERT OR IGNORE INTO users (id, username, password, name, role, color)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `)
+  for (const u of equipe) {
+    insertUser.run(u.id, u.username, '1234', u.name, u.role, u.color)
   }
-  console.log('Database ready.');
 }
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────────────────────
-app.use(express.json());
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.set('Pragma', 'no-cache');
-  }
-  next();
-});
+app.use(express.json())
+app.use(express.static(path.join(__dirname, 'public')))
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'toca-coelho-secret-2024',
+  secret: process.env.SESSION_SECRET || 'toca-do-coelho-checklist-2025',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
-}));
+  cookie: { maxAge: 8 * 60 * 60 * 1000 } // 8 horas
+}))
+
+// ─── HELPER ───────────────────────────────────────────────────────────────────
+function parseJSON(val, fallback) {
+  try { return JSON.parse(val) } catch { return fallback }
+}
+
+function formatProgress(row) {
+  if (!row) return null
+  return {
+    ...row,
+    completed_tasks: parseJSON(row.completed_tasks, []),
+    task_times:      parseJSON(row.task_times, {}),
+    task_users:      parseJSON(row.task_users, {}),
+    completed:       !!row.completed,
+    approved:        !!row.approved,
+  }
+}
 
 function requireAuth(req, res, next) {
-  if (!req.session.userId) return res.status(401).json({ error: 'Não autenticado' });
-  next();
+  if (!req.session.userId) return res.status(401).json({ error: 'Não autenticado' })
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId)
+  if (!user) return res.status(401).json({ error: 'Sessão inválida' })
+  req.user = user
+  next()
+}
+
+function requireAdmin(req, res, next) {
+  if (req.user.role !== 'admin' && req.user.role !== 'gerente')
+    return res.status(403).json({ error: 'Sem permissão' })
+  next()
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
-app.post('/api/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const { rows } = await pool.query(
-      'SELECT * FROM users WHERE username=$1 AND password=$2',
-      [username, password]
-    );
-    if (!rows.length) return res.status(401).json({ error: 'Usuário ou senha incorretos' });
-    req.session.userId = rows[0].id;
-    res.json({ user: rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body
+  if (!username || !password) return res.status(400).json({ error: 'Dados incompletos' })
+
+  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.toLowerCase().trim())
+  if (!user || user.password !== password)
+    return res.status(401).json({ error: 'Usuário ou senha incorretos' })
+
+  req.session.userId = user.id
+  const { password: _, ...safeUser } = user
+  res.json({ user: safeUser })
+})
+
+app.get('/api/me', requireAuth, (req, res) => {
+  const { password: _, ...safeUser } = req.user
+  res.json({ user: safeUser })
+})
 
 app.post('/api/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ ok: true });
-});
+  req.session.destroy()
+  res.json({ ok: true })
+})
 
-app.get('/api/me', async (req, res) => {
-  if (!req.session.userId) return res.status(401).json({ error: 'Não autenticado' });
-  try {
-    const { rows } = await pool.query('SELECT * FROM users WHERE id=$1', [req.session.userId]);
-    if (!rows.length) return res.status(401).json({ error: 'Usuário não encontrado' });
-    res.json({ user: rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+// ─── USUÁRIOS ─────────────────────────────────────────────────────────────────
+app.get('/api/users', requireAuth, (req, res) => {
+  const users = db.prepare('SELECT id, username, name, role, color FROM users ORDER BY name').all()
+  res.json(users)
+})
 
-// ─── USERS ────────────────────────────────────────────────────────────────────
-app.get('/api/users', requireAuth, async (req, res) => {
-  try {
-    const { rows } = await pool.query('SELECT * FROM users ORDER BY name');
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+app.post('/api/users', requireAuth, requireAdmin, (req, res) => {
+  const { id, username, password, name, role, color } = req.body
+  if (!username || !password || !name) return res.status(400).json({ error: 'Dados incompletos' })
 
-app.post('/api/users', requireAuth, async (req, res) => {
   try {
-    const { id, username, password, name, role, color } = req.body;
-    const { rows } = await pool.query(
-      'INSERT INTO users (id,username,password,name,role,color) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [id, username, password, name, role, color]
-    );
-    res.json(rows[0]);
+    db.prepare(`
+      INSERT INTO users (id, username, password, name, role, color)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id || ('u' + Date.now()), username.toLowerCase().trim(), password, name, role || 'operador', color || '#6b1414')
+    res.json({ ok: true })
   } catch (e) {
-    if (e.code === '23505') return res.status(409).json({ error: 'Usuário já existe' });
-    res.status(500).json({ error: e.message });
+    if (e.message.includes('UNIQUE')) return res.status(400).json({ error: 'Login já existe' })
+    res.status(500).json({ error: e.message })
   }
-});
+})
 
-app.delete('/api/users/:id', requireAuth, async (req, res) => {
-  try {
-    await pool.query('DELETE FROM users WHERE id=$1', [req.params.id]);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+app.delete('/api/users/:id', requireAuth, requireAdmin, (req, res) => {
+  if (req.params.id === req.user.id) return res.status(400).json({ error: 'Não pode remover a si mesmo' })
+  db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id)
+  res.json({ ok: true })
+})
 
-app.put('/api/users/:id/password', requireAuth, async (req, res) => {
-  try {
-    const { password } = req.body;
-    await pool.query('UPDATE users SET password=$1 WHERE id=$2', [password, req.params.id]);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+// ─── PROGRESSO ────────────────────────────────────────────────────────────────
+app.get('/api/progress', requireAuth, (req, res) => {
+  const { date } = req.query
+  const rows = date
+    ? db.prepare('SELECT * FROM progress WHERE date = ?').all(date)
+    : db.prepare('SELECT * FROM progress').all()
+  res.json(rows.map(formatProgress))
+})
 
-// ─── PROGRESS ─────────────────────────────────────────────────────────────────
-app.get('/api/progress', requireAuth, async (req, res) => {
-  try {
-    const { date } = req.query;
-    const { rows } = await pool.query(
-      'SELECT * FROM progress WHERE date=$1',
-      [date || todayBR()]
-    );
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+app.put('/api/progress/:sectorId/:type', requireAuth, (req, res) => {
+  const { sectorId, type } = req.params
+  const {
+    date, completed_tasks, task_times, task_users,
+    completed, completed_by, completed_at,
+    approved, approved_by, approved_at
+  } = req.body
 
-app.put('/api/progress/:sectorId/:type', requireAuth, async (req, res) => {
-  try {
-    const { sectorId, type } = req.params;
-    const { date, completed_tasks, task_times, task_users, completed, completed_by, completed_at, approved, approved_by, approved_at } = req.body;
-    const d = date || todayBR();
-    const { rows } = await pool.query(`
-      INSERT INTO progress (date,sector_id,type,completed_tasks,task_times,task_users,completed,completed_by,completed_at,approved,approved_by,approved_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-      ON CONFLICT (date,sector_id,type) DO UPDATE SET
-        completed_tasks=$4, task_times=$5, task_users=$6,
-        completed=$7, completed_by=$8, completed_at=$9,
-        approved=$10, approved_by=$11, approved_at=$12
-      RETURNING *`,
-      [d, sectorId, type,
-       JSON.stringify(completed_tasks || []),
-       JSON.stringify(task_times || {}),
-       JSON.stringify(task_users || {}),
-       completed || false, completed_by || null, completed_at || null,
-       approved || false, approved_by || null, approved_at || null]
-    );
-    res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+  const d = date || new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
 
-// ─── LOGS ─────────────────────────────────────────────────────────────────────
-app.get('/api/logs', requireAuth, async (req, res) => {
-  try {
-    const { rows } = await pool.query('SELECT * FROM logs ORDER BY created_at DESC LIMIT 200');
-    res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+  const existing = db.prepare(
+    'SELECT id FROM progress WHERE date = ? AND sector_id = ? AND type = ?'
+  ).get(d, sectorId, type)
 
-app.post('/api/logs', requireAuth, async (req, res) => {
-  try {
-    const { id, sector_id, type, date, user_name, approved_by, completed_at, approved_at, task_count } = req.body;
-    const { rows } = await pool.query(
-      'INSERT INTO logs (id,sector_id,type,date,user_name,approved_by,completed_at,approved_at,task_count) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING RETURNING *',
-      [id, sector_id, type, date, user_name, approved_by || null, completed_at, approved_at || null, task_count]
-    );
-    res.json(rows[0] || {});
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+  if (existing) {
+    db.prepare(`
+      UPDATE progress SET
+        completed_tasks = ?, task_times = ?, task_users = ?,
+        completed = ?, completed_by = ?, completed_at = ?,
+        approved = ?, approved_by = ?, approved_at = ?
+      WHERE date = ? AND sector_id = ? AND type = ?
+    `).run(
+      JSON.stringify(completed_tasks || []),
+      JSON.stringify(task_times || {}),
+      JSON.stringify(task_users || {}),
+      completed ? 1 : 0, completed_by || null, completed_at || null,
+      approved ? 1 : 0, approved_by || null, approved_at || null,
+      d, sectorId, type
+    )
+  } else {
+    db.prepare(`
+      INSERT INTO progress
+        (date, sector_id, type, completed_tasks, task_times, task_users,
+         completed, completed_by, completed_at, approved, approved_by, approved_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      d, sectorId, type,
+      JSON.stringify(completed_tasks || []),
+      JSON.stringify(task_times || {}),
+      JSON.stringify(task_users || {}),
+      completed ? 1 : 0, completed_by || null, completed_at || null,
+      approved ? 1 : 0, approved_by || null, approved_at || null
+    )
+  }
 
-// ─── RESET ────────────────────────────────────────────────────────────────────
-app.delete('/api/progress/today', requireAuth, async (req, res) => {
-  try {
-    await pool.query('DELETE FROM progress WHERE date=$1', [todayBR()]);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+  // Registrar log se foi finalizado
+  if (completed) {
+    db.prepare(`
+      INSERT INTO logs (date, sector_id, type, user_id, user_name, action)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(d, sectorId, type, req.user.id, req.user.name, 'finalizado')
+  }
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-function todayBR() {
-  return new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 10);
-}
+  const row = db.prepare(
+    'SELECT * FROM progress WHERE date = ? AND sector_id = ? AND type = ?'
+  ).get(d, sectorId, type)
+  res.json(formatProgress(row))
+})
 
-// ─── SERVE HTML ───────────────────────────────────────────────────────────────
+app.delete('/api/progress/today', requireAuth, requireAdmin, (req, res) => {
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+  db.prepare('DELETE FROM progress WHERE date = ?').run(today)
+  res.json({ ok: true })
+})
+
+// ─── LOGS / HISTÓRICO ─────────────────────────────────────────────────────────
+app.get('/api/logs', requireAuth, (req, res) => {
+  const logs = db.prepare(
+    'SELECT * FROM logs ORDER BY created_at DESC LIMIT 200'
+  ).all()
+  res.json(logs)
+})
+
+// ─── FRONTEND ─────────────────────────────────────────────────────────────────
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
+})
 
 // ─── START ────────────────────────────────────────────────────────────────────
-initDB().then(() => {
-  app.listen(PORT, () => console.log(`🐰 Toca do Coelho rodando na porta ${PORT}`));
-}).catch(err => {
-  console.error('Erro ao iniciar banco:', err);
-  process.exit(1);
-});
+app.listen(PORT, () => {
+  console.log(`✅ Checklist Toca do Coelho rodando na porta ${PORT}`)
+  console.log(`📦 Banco de dados: ${DB_PATH}`)
+})
