@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Toca do Coelho — Checklists</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F0EB;--surface:#FFF;--surface-alt:#FAF7F4;--border:#E8E0D8;--text:#2C2520;--text2:#8C7E72;--accent:#C8553D;--green:#4A7C59;--green-l:#EAF3EC;--amber:#C49A2A;--amber-l:#FDF6E3;--blue:#2B7A9E;--blue-l:#E8F4F8;--r:12px;--sh:0 1px 3px rgba(44,37,32,.06),0 4px 12px rgba(44,37,32,.04);--sh2:0 4px 16px rgba(44,37,32,.08),0 12px 32px rgba(44,37,32,.06)}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;-webkit-tap-highlight-color:transparent}
+
+/* LOGIN */
+.login-screen{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#2C2520,#4A3728)}
+.login-card{background:var(--surface);border-radius:20px;padding:48px 36px;width:100%;max-width:380px;box-shadow:var(--sh2);text-align:center}
+.login-card .brand{font-family:'Playfair Display',serif;font-size:28px;color:var(--accent);margin-bottom:4px}
+.login-card .subtitle{font-size:13px;color:var(--text2);margin-bottom:36px;letter-spacing:1px;text-transform:uppercase}
+.ig{margin-bottom:16px;text-align:left}.ig label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.ig input,.ig select,.ig textarea{width:100%;padding:13px 15px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--text);background:var(--surface-alt);outline:none;transition:border .2s}
+.ig input:focus,.ig select:focus,.ig textarea:focus{border-color:var(--accent)}.ig textarea{resize:vertical;min-height:60px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 24px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-p{background:var(--accent);color:#fff;width:100%;margin-top:8px}.btn-p:hover{background:#b34a34}
+.btn-s{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}.btn-s:hover{background:var(--surface-alt)}
+.btn-sm{padding:9px 16px;font-size:12px}.btn-g{background:var(--green);color:#fff}.btn-g:hover{background:#3d6a4b}
+.btn-d{background:var(--accent);color:#fff}.btn-d:hover{background:#b34a34}.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{background:#236a87}
+.login-error{color:var(--accent);font-size:13px;margin-top:12px;display:none}
+
+/* HEADER */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hdr .br{font-family:'Playfair Display',serif;font-size:20px;color:var(--accent)}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.badge{font-size:11px;color:var(--text2);background:var(--surface-alt);padding:5px 11px;border-radius:20px;border:1px solid var(--border)}
+.btn-i{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .2s;font-size:16px}
+.btn-i:hover{background:var(--surface-alt);color:var(--text)}
+
+/* LAYOUT */
+.app{display:none}.app.on{display:block}.main{padding:20px;max-width:600px;margin:0 auto}
+.page{display:none}.page.on{display:block}
+
+/* DATE */
+.date-bar{text-align:center;margin-bottom:24px}.date-bar .dy{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}.date-bar .dt{font-family:'Playfair Display',serif;font-size:22px}
+
+/* TABS */
+.tabs{display:flex;background:var(--surface);border-radius:var(--r);border:1.5px solid var(--border);padding:4px;margin-bottom:24px}
+.tabs button{flex:1;padding:11px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .25s}
+.tabs button.on{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(200,85,61,.25)}
+
+/* PROGRESS */
+.prog{display:flex;align-items:center;gap:16px;background:var(--surface);border-radius:var(--r);padding:18px;margin-bottom:24px;box-shadow:var(--sh)}
+.ring{position:relative;width:60px;height:60px;flex-shrink:0}.ring svg{transform:rotate(-90deg)}.ring .rbg{stroke:var(--border)}.ring .rfill{stroke:var(--green);transition:stroke-dashoffset .5s ease}
+.ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
+.prog h3{font-size:14px;font-weight:600;margin-bottom:2px}.prog p{font-size:12px;color:var(--text2)}
+
+/* SECTORS */
+.sc{background:var(--surface);border-radius:var(--r);margin-bottom:14px;box-shadow:var(--sh);overflow:hidden;animation:fi .3s ease both}
+.sc:nth-child(2){animation-delay:.04s}.sc:nth-child(3){animation-delay:.08s}.sc:nth-child(4){animation-delay:.12s}.sc:nth-child(5){animation-delay:.16s}
+.sc-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;user-select:none;transition:background .2s}.sc-h:hover{background:var(--surface-alt)}
+.sc-l{display:flex;align-items:center;gap:12px}.sc-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.sc-nm{font-weight:600;font-size:14px}
+.sc-cnt{font-size:11px;color:var(--text2);background:var(--surface-alt);padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-weight:500}
+.sc-cnt.ok{background:var(--green-l);color:var(--green);border-color:var(--green-l)}
+.sc-chv{color:var(--text2);transition:transform .3s;font-size:16px}.sc.open .sc-chv{transform:rotate(180deg)}
+.sc-body{max-height:0;overflow:hidden;transition:max-height .35s ease}.sc.open .sc-body{max-height:4000px}
+
+/* TASKS */
+.tk{display:flex;align-items:flex-start;gap:12px;padding:13px 18px;border-top:1px solid var(--border);cursor:pointer;transition:background .15s}.tk:hover{background:var(--surface-alt)}.tk.dis{pointer-events:none;opacity:.55}
+.ck{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .2s;background:var(--surface)}
+.tk.done .ck{background:var(--green);border-color:var(--green)}.ck svg{opacity:0;transition:opacity .2s}.tk.done .ck svg{opacity:1}
+.tk-c{flex:1}.tk-t{font-size:13px;line-height:1.5}.tk.done .tk-t{color:var(--text2);text-decoration:line-through}
+.tk-who{font-size:11px;color:var(--green);margin-top:2px;display:none;font-weight:500}.tk.done .tk-who{display:block}
+.tk-note{font-size:10px;color:var(--amber);background:var(--amber-l);padding:2px 7px;border-radius:5px;margin-top:3px;display:inline-block}
+
+/* FINALIZE */
+.fin-s{padding:14px 18px;border-top:1px solid var(--border)}.fin-bar{display:flex;gap:8px}
+.fin-bar input{flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;background:var(--surface-alt);outline:none}.fin-bar input:focus{border-color:var(--green)}
+.done-badge{padding:12px 18px;border-top:1px solid var(--border);background:var(--green-l);color:var(--green);font-size:12px;font-weight:600;text-align:center}
+
+/* PANELS */
+.ov{position:fixed;inset:0;background:rgba(44,37,32,.4);z-index:200;display:none;opacity:0;transition:opacity .25s}.ov.on{display:block;opacity:1}
+.pnl{position:fixed;top:0;right:-100%;width:100%;max-width:440px;height:100%;background:var(--bg);z-index:201;transition:right .3s ease;overflow-y:auto}.pnl.on{right:0}
+.pnl-h{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1}.pnl-h h2{font-size:17px;font-weight:700}.pnl-b{padding:20px}
+
+/* REPORT */
+.rpt-card{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;box-shadow:var(--sh);cursor:pointer;transition:background .15s}
+.rpt-card:hover{background:var(--surface-alt)}
+.rpt-date{font-weight:700;font-size:13px;margin-bottom:3px}.rpt-meta{font-size:11px;color:var(--text2)}
+.rpt-bar{height:6px;background:var(--border);border-radius:3px;margin-top:8px;overflow:hidden}.rpt-fill{height:100%;background:var(--green);border-radius:3px;transition:width .3s}
+.rpt-sectors{font-size:12px;color:var(--text2);margin-top:8px;line-height:1.8}
+
+/* DETAIL VIEW */
+.detail-item{background:var(--surface);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.detail-item h4{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.detail-task{font-size:12px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.detail-task:last-child{border:none}
+.detail-task .who{font-size:11px;color:var(--green);font-weight:500}
+.detail-task .undone{color:var(--accent);font-weight:500}
+
+/* ADMIN */
+.adm-sec{margin-bottom:24px}.adm-sec h3{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.u-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);padding:12px 14px;border-radius:10px;margin-bottom:8px;box-shadow:var(--sh)}
+.u-row .u-info{font-size:13px;font-weight:500}.u-row .u-role{font-size:11px;color:var(--text2)}
+.u-row .u-btns{display:flex;gap:6px}
+.adm-form{background:var(--surface);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}.adm-form .ig{margin-bottom:10px}
+.task-ed{background:var(--surface);padding:10px 14px;border-radius:10px;margin-bottom:6px;box-shadow:var(--sh);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.task-ed .te-text{flex:1;font-size:12px;line-height:1.4}.task-ed .te-btns{display:flex;gap:4px;flex-shrink:0}
+
+/* NAV */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
+.nav button{flex:1;padding:10px 0 8px;border:none;background:none;font-family:inherit;font-size:10px;color:var(--text2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .2s}
+.nav button.on{color:var(--accent)}.nav button svg{width:20px;height:20px}
+.spacer{height:76px}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--text);color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:500;z-index:999;transition:transform .3s ease;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(44,37,32,.5);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.on{display:flex}
+.modal{background:var(--surface);border-radius:16px;padding:28px 24px;width:100%;max-width:400px;box-shadow:var(--sh2)}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal .ig{margin-bottom:12px}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.modal-btns .btn{flex:1}
+
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:400px){.login-card{padding:36px 24px}.main{padding:14px}}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="brand">Toca do Coelho</div>
+    <div class="subtitle">Checklists Operacionais</div>
+    <div class="ig"><label>Usuário</label><input type="text" id="loginUser" placeholder="seu usuário" autocomplete="username"></div>
+    <div class="ig"><label>Senha</label><input type="password" id="loginPass" placeholder="sua senha" autocomplete="current-password"></div>
+    <button class="btn btn-p" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="loginError">Usuário ou senha inválidos</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app">
+  <header class="hdr">
+    <div class="br">Toca do Coelho</div>
+    <div class="hdr-r">
+      <span class="badge" id="userBadge"></span>
+      <button class="btn-i" onclick="doLogout()" title="Sair">⏻</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- PAGE: CHECKLIST -->
+    <div class="page on" id="pgCheck">
+      <div class="date-bar"><div class="dy" id="dayLbl"></div><div class="dt" id="dateLbl"></div></div>
+      <div class="tabs" id="tabBar">
+        <button class="on" onclick="setTab('abertura',this)">☀️ Abertura</button>
+        <button onclick="setTab('fechamento',this)">🌙 Fechamento</button>
+      </div>
+      <div class="prog">
+        <div class="ring"><svg width="60" height="60" viewBox="0 0 64 64"><circle class="rbg" cx="32" cy="32" r="28" fill="none" stroke-width="5"/><circle class="rfill" id="rFill" cx="32" cy="32" r="28" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="175.93" stroke-dashoffset="175.93"/></svg><div class="pct" id="rPct">0%</div></div>
+        <div><h3 id="pTitle">Progresso</h3><p id="pSub">0 de 0</p></div>
+      </div>
+      <div id="sectors"></div>
+      <div class="spacer"></div>
+    </div>
+
+    <!-- PAGE: REPORTS -->
+    <div class="page" id="pgReport">
+      <h2 style="font-size:18px;margin-bottom:6px">📊 Relatórios</h2>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Histórico dos últimos dias</p>
+      <div class="tabs" style="margin-bottom:16px">
+        <button class="on" onclick="loadReport(7,this)">7 dias</button>
+        <button onclick="loadReport(15,this)">15 dias</button>
+        <button onclick="loadReport(30,this)">30 dias</button>
+      </div>
+      <div id="reportList"></div>
+      <div class="spacer"></div>
+    </div>
+
+    <!-- PAGE: ADMIN -->
+    <div class="page" id="pgAdmin">
+      <h2 style="font-size:18px;margin-bottom:20px">⚙️ Administração</h2>
+
+      <div class="adm-sec">
+        <h3>👥 Equipe</h3>
+        <div id="userList"></div>
+        <button class="btn btn-blue btn-sm" style="width:100%;margin-top:10px" onclick="openUserModal()">+ Adicionar Funcionário</button>
+      </div>
+
+      <div class="adm-sec">
+        <h3>📋 Tarefas dos Checklists</h3>
+        <div class="tabs" style="margin-bottom:12px" id="admTabBar">
+          <button class="on" onclick="admTab='abertura';renderAdmTasks();this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Abertura</button>
+          <button onclick="admTab='fechamento';renderAdmTasks();this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Fechamento</button>
+        </div>
+        <div id="admTaskList"></div>
+        <button class="btn btn-g btn-sm" style="width:100%;margin-top:10px" onclick="openTaskModal()">+ Adicionar Tarefa</button>
+      </div>
+
+      <div class="adm-sec">
+        <h3>⚠️ Ações</h3>
+        <button class="btn btn-s" style="width:100%;margin-bottom:10px" onclick="resetDay()">🔄 Resetar checklists de hoje</button>
+      </div>
+      <div class="spacer"></div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="on" onclick="goPage('pgCheck',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Checklist</button>
+    <button onclick="goPage('pgReport',this);loadReport(7)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></svg>Relatórios</button>
+    <button id="navAdmin" onclick="goPage('pgAdmin',this);loadAdmin()" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>Admin</button>
+  </nav>
+</div>
+
+<!-- REPORT DETAIL PANEL -->
+<div class="ov" id="detailOv" onclick="closeDetail()"></div>
+<div class="pnl" id="detailPnl">
+  <div class="pnl-h"><h2 id="detailTitle">Detalhe</h2><button class="btn-i" onclick="closeDetail()">✕</button></div>
+  <div class="pnl-b" id="detailBody"></div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-bg" id="userModal">
+  <div class="modal">
+    <h3 id="umTitle">Adicionar Funcionário</h3>
+    <input type="hidden" id="umId">
+    <div class="ig"><label>Nome</label><input id="umName"></div>
+    <div class="ig"><label>Usuário (login)</label><input id="umUser"></div>
+    <div class="ig"><label>Senha</label><input id="umPass"></div>
+    <div class="ig"><label>Cargo</label><select id="umRole"><option value="operador">Operador</option><option value="gerente">Gerente</option><option value="admin">Admin</option></select></div>
+    <div class="ig"><label>Setor principal</label><select id="umSector"><option value="">Todos</option></select></div>
+    <div class="modal-btns">
+      <button class="btn btn-s" onclick="closeUserModal()">Cancelar</button>
+      <button class="btn btn-g" onclick="saveUser()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-bg" id="taskModal">
+  <div class="modal">
+    <h3 id="tmTitle">Adicionar Tarefa</h3>
+    <input type="hidden" id="tmId">
+    <div class="ig"><label>Setor</label><select id="tmSector"></select></div>
+    <div class="ig"><label>Descrição</label><textarea id="tmText" rows="2"></textarea></div>
+    <div class="ig"><label>Observação (opcional)</label><input id="tmNote"></div>
+    <div class="modal-btns">
+      <button class="btn btn-s" onclick="closeTaskModal()">Cancelar</button>
+      <button class="btn btn-g" onclick="saveTask()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let user = null, tab = 'abertura', sectors = [], admTab = 'abertura';
+
+const API = async (url, opts) => {
+  const r = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  return r.json();
+};
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════
+async function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) });
+  if (!res.ok) { document.getElementById('loginError').style.display = 'block'; return; }
+  user = await res.json();
+  localStorage.setItem('toca_user', JSON.stringify(user));
+  showApp();
+}
+function doLogout() {
+  user = null; localStorage.removeItem('toca_user');
+  document.getElementById('app').classList.remove('on');
+  document.getElementById('loginScreen').style.display = '';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+function tryAuto() {
+  const s = localStorage.getItem('toca_user');
+  if (s) { user = JSON.parse(s); showApp(); }
+}
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('on');
+  document.getElementById('userBadge').textContent = user.name;
+  document.getElementById('navAdmin').style.display = (user.role === 'admin' || user.role === 'gerente') ? '' : 'none';
+  setDate(); loadChecklist();
+}
+
+// ═══════════════════════════════════════
+// PAGES
+// ═══════════════════════════════════════
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+}
+
+// ═══════════════════════════════════════
+// DATE
+// ═══════════════════════════════════════
+function setDate() {
+  const d = new Date();
+  const dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('dayLbl').textContent = dias[d.getDay()];
+  document.getElementById('dateLbl').textContent = d.getDate() + ' de ' + meses[d.getMonth()];
+}
+
+// ═══════════════════════════════════════
+// CHECKLIST
+// ═══════════════════════════════════════
+function setTab(t, btn) {
+  tab = t;
+  document.querySelectorAll('#tabBar button').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  loadChecklist();
+}
+
+async function loadChecklist() {
+  sectors = await API('/api/checklist/' + tab);
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const c = document.getElementById('sectors');
+  let td = 0, ta = 0, html = '';
+  sectors.forEach(s => {
+    const done = s.items.filter(i => i.done).length, total = s.items.length;
+    td += done; ta += total;
+    const allDone = done === total && total > 0;
+    html += `<div class="sc" id="s-${s.id}"><div class="sc-h" onclick="document.getElementById('s-${s.id}').classList.toggle('open')"><div class="sc-l"><div class="sc-ico" style="background:${s.bg};color:${s.color}">${s.icon}</div><span class="sc-nm">${s.name}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="sc-cnt${allDone?' ok':''}">${done}/${total}</span><span class="sc-chv">▾</span></div></div><div class="sc-body">`;
+    s.items.forEach(item => {
+      const dc = item.done ? ' done' : '';
+      const dis = s.finalized ? ' dis' : '';
+      html += `<div class="tk${dc}${dis}" onclick="toggleTask(${item.id},'${s.id}')"><div class="ck"><svg width="13" height="13" viewBox="0 0 14 14" fill="none"><polyline points="2.5 7.5 5.5 10.5 11.5 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="tk-c"><div class="tk-t">${item.text}</div>${item.note ? `<div class="tk-note">⚠️ ${item.note}</div>` : ''}<div class="tk-who">${item.done_at ? '✓ ' + item.done_at + ' — ' + item.done_by : ''}</div></div></div>`;
+    });
+    if (s.finalized) html += `<div class="done-badge">✓ Finalizado por ${s.finalizedBy} às ${s.finalizedAt}</div>`;
+    else if (allDone) html += `<div class="fin-s"><div class="fin-bar"><input type="text" id="fin-${s.id}" placeholder="Responsável" value="${user.name}"><button class="btn btn-g btn-sm" onclick="event.stopPropagation();doFinalize('${s.id}')">Finalizar</button></div></div>`;
+    html += `</div></div>`;
+  });
+  c.innerHTML = html;
+  const pct = ta === 0 ? 0 : Math.round(td / ta * 100);
+  document.getElementById('rFill').style.strokeDashoffset = 175.93 - 175.93 * pct / 100;
+  document.getElementById('rPct').textContent = pct + '%';
+  document.getElementById('pTitle').textContent = tab === 'abertura' ? 'Progresso da Abertura' : 'Progresso do Fechamento';
+  document.getElementById('pSub').textContent = td + ' de ' + ta + ' tarefas concluídas';
+}
+
+async function toggleTask(taskId, sectorId) {
+  const s = sectors.find(x => x.id === sectorId);
+  if (s?.finalized) return;
+  await API('/api/toggle', { method: 'POST', body: JSON.stringify({ task_id: taskId, tab, user_name: user.name }) });
+  await loadChecklist();
+  document.getElementById('s-' + sectorId)?.classList.add('open');
+}
+
+async function doFinalize(sectorId) {
+  const name = document.getElementById('fin-' + sectorId)?.value?.trim();
+  if (!name) return;
+  await API('/api/finalize', { method: 'POST', body: JSON.stringify({ sector_id: sectorId, tab, finalized_by: name }) });
+  toast('Setor finalizado!');
+  loadChecklist();
+}
+
+// ═══════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════
+async function loadReport(days, btn) {
+  if (btn) { btn.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('on')); btn.classList.add('on'); }
+  const data = await API('/api/reports?days=' + (days || 7));
+  const el = document.getElementById('reportList');
+  if (!data.length) { el.innerHTML = '<p style="text-align:center;color:var(--text2);padding:40px 0">Nenhum dado ainda.</p>'; return; }
+  let html = '';
+  data.forEach(day => {
+    day.tabs.forEach(t => {
+      let td = 0, ta = 0;
+      const secs = t.sectors.map(s => { td += s.done; ta += s.total; return `${s.icon} ${s.name}: ${s.done}/${s.total}${s.finalized ? ' ✓' : ''}`; });
+      const pct = ta === 0 ? 0 : Math.round(td / ta * 100);
+      if (ta === 0) return;
+      html += `<div class="rpt-card" onclick="openDetail('${day.date}','${t.tab}')">
+        <div class="rpt-date">${fmtDate(day.date)} — ${t.tab === 'abertura' ? '☀️ Abertura' : '🌙 Fechamento'}</div>
+        <div class="rpt-meta">${td}/${ta} tarefas · ${pct}%</div>
+        <div class="rpt-bar"><div class="rpt-fill" style="width:${pct}%"></div></div>
+        <div class="rpt-sectors">${secs.join('<br>')}</div>
+      </div>`;
+    });
+  });
+  el.innerHTML = html || '<p style="text-align:center;color:var(--text2);padding:40px 0">Nenhum dado ainda.</p>';
+}
+
+async function openDetail(date, dtab) {
+  document.getElementById('detailTitle').textContent = fmtDate(date) + ' — ' + (dtab === 'abertura' ? '☀️ Abertura' : '🌙 Fechamento');
+  const data = await API(`/api/reports/${date}/${dtab}`);
+  let html = '';
+  data.forEach(s => {
+    html += `<div class="detail-item"><h4><span style="font-size:18px">${s.icon}</span> ${s.name}${s.finalized ? ` <span style="font-size:11px;color:var(--green)">✓ ${s.finalizedBy} ${s.finalizedAt}</span>` : ''}</h4>`;
+    s.items.forEach(t => {
+      html += `<div class="detail-task"><span>${t.done ? '✅' : '⬜'} ${t.text}</span>${t.done ? `<span class="who">${t.done_by} ${t.done_at}</span>` : '<span class="undone">pendente</span>'}</div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('detailBody').innerHTML = html;
+  document.getElementById('detailOv').classList.add('on');
+  document.getElementById('detailPnl').classList.add('on');
+}
+function closeDetail() { document.getElementById('detailOv').classList.remove('on'); document.getElementById('detailPnl').classList.remove('on'); }
+function fmtDate(d) { const [y, m, day] = d.split('-'); return day + '/' + m + '/' + y; }
+
+// ═══════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════
+let allUsers = [], allTasks = [], allSectors = [];
+
+async function loadAdmin() {
+  allUsers = await API('/api/users');
+  allTasks = await API('/api/tasks');
+  allSectors = await API('/api/sectors');
+  renderUsers();
+  renderAdmTasks();
+}
+
+function renderUsers() {
+  const el = document.getElementById('userList');
+  el.innerHTML = allUsers.map(u => `<div class="u-row"><div><div class="u-info">${u.name} <span style="color:var(--text2);font-size:11px">(${u.username})</span></div><div class="u-role">${u.role}${u.sector ? ' · ' + u.sector : ''}</div></div><div class="u-btns"><button class="btn btn-sm btn-s" onclick="editUser(${u.id})">✏️</button><button class="btn btn-sm btn-d" onclick="delUser(${u.id})">🗑️</button></div></div>`).join('');
+}
+
+function renderAdmTasks() {
+  const filtered = allTasks.filter(t => t.tab === admTab);
+  const el = document.getElementById('admTaskList');
+  const bySector = {};
+  allSectors.forEach(s => bySector[s.id] = { ...s, tasks: [] });
+  filtered.forEach(t => { if (bySector[t.sector_id]) bySector[t.sector_id].tasks.push(t); });
+  let html = '';
+  Object.values(bySector).forEach(s => {
+    if (!s.tasks.length) return;
+    html += `<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">${s.icon} ${s.name}</div>`;
+    s.tasks.forEach(t => {
+      html += `<div class="task-ed"><div class="te-text">${t.text}${t.note ? `<br><span style="color:var(--amber);font-size:10px">⚠️ ${t.note}</span>` : ''}</div><div class="te-btns"><button class="btn btn-sm btn-s" onclick="editTask(${t.id})">✏️</button><button class="btn btn-sm btn-d" onclick="delTask(${t.id})">🗑️</button></div></div>`;
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html || '<p style="color:var(--text2);font-size:13px">Nenhuma tarefa</p>';
+}
+
+// USER MODAL
+function openUserModal(u) {
+  document.getElementById('umTitle').textContent = u ? 'Editar Funcionário' : 'Adicionar Funcionário';
+  document.getElementById('umId').value = u?.id || '';
+  document.getElementById('umName').value = u?.name || '';
+  document.getElementById('umUser').value = u?.username || '';
+  document.getElementById('umPass').value = '';
+  document.getElementById('umRole').value = u?.role || 'operador';
+  const sel = document.getElementById('umSector');
+  sel.innerHTML = '<option value="">Todos</option>' + allSectors.map(s => `<option value="${s.id}"${u?.sector === s.id ? ' selected' : ''}>${s.name}</option>`).join('');
+  document.getElementById('userModal').classList.add('on');
+}
+function closeUserModal() { document.getElementById('userModal').classList.remove('on'); }
+function editUser(id) { openUserModal(allUsers.find(u => u.id === id)); }
+async function saveUser() {
+  const id = document.getElementById('umId').value;
+  const data = { name: document.getElementById('umName').value.trim(), username: document.getElementById('umUser').value.trim(), role: document.getElementById('umRole').value, sector: document.getElementById('umSector').value || null };
+  const pass = document.getElementById('umPass').value;
+  if (pass) data.password = pass;
+  if (!data.name || !data.username) return alert('Preencha nome e usuário');
+  if (id) { await API('/api/users/' + id, { method: 'PUT', body: JSON.stringify(data) }); }
+  else { if (!pass) return alert('Defina uma senha'); data.password = pass; await API('/api/users', { method: 'POST', body: JSON.stringify(data) }); }
+  closeUserModal(); toast('Salvo!'); loadAdmin();
+}
+async function delUser(id) { if (!confirm('Remover este funcionário?')) return; await API('/api/users/' + id, { method: 'DELETE' }); toast('Removido'); loadAdmin(); }
+
+// TASK MODAL
+function openTaskModal(t) {
+  document.getElementById('tmTitle').textContent = t ? 'Editar Tarefa' : 'Adicionar Tarefa';
+  document.getElementById('tmId').value = t?.id || '';
+  document.getElementById('tmText').value = t?.text || '';
+  document.getElementById('tmNote').value = t?.note || '';
+  const sel = document.getElementById('tmSector');
+  sel.innerHTML = allSectors.map(s => `<option value="${s.id}"${t?.sector_id === s.id ? ' selected' : ''}>${s.name}</option>`).join('');
+  if (!t) sel.value = allSectors[0]?.id;
+  document.getElementById('taskModal').classList.add('on');
+}
+function closeTaskModal() { document.getElementById('taskModal').classList.remove('on'); }
+function editTask(id) { openTaskModal(allTasks.find(t => t.id === id)); }
+async function saveTask() {
+  const id = document.getElementById('tmId').value;
+  const data = { sector_id: document.getElementById('tmSector').value, tab: admTab, text: document.getElementById('tmText').value.trim(), note: document.getElementById('tmNote').value.trim() || null };
+  if (!data.text) return alert('Escreva a descrição');
+  if (id) { await API('/api/tasks/' + id, { method: 'PUT', body: JSON.stringify(data) }); }
+  else { await API('/api/tasks', { method: 'POST', body: JSON.stringify(data) }); }
+  closeTaskModal(); toast('Salvo!'); loadAdmin(); loadChecklist();
+}
+async function delTask(id) { if (!confirm('Remover esta tarefa?')) return; await API('/api/tasks/' + id, { method: 'DELETE' }); toast('Removido'); loadAdmin(); loadChecklist(); }
+
+async function resetDay() { if (!confirm('Resetar todos os checklists de hoje?')) return; await API('/api/reset-day', { method: 'POST' }); toast('Resetado!'); loadChecklist(); }
+
+// INIT
+tryAuto();
+</script>
+</body>
+</html>
