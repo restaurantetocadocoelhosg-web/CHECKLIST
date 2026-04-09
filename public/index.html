@@ -12,8 +12,8 @@
 /* LOGIN */
 .login-screen{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#2C2520,#4A3728)}
 .login-card{background:var(--surface);border-radius:20px;padding:48px 36px;width:100%;max-width:380px;box-shadow:var(--sh2);text-align:center}
-.login-card .brand{font-family:'Playfair Display',serif;font-size:28px;color:var(--accent);margin-bottom:4px}
-.login-card .subtitle{font-size:13px;color:var(--text2);margin-bottom:36px;letter-spacing:1px;text-transform:uppercase}
+.login-card .logo-wrap{margin-bottom:28px}
+.login-card .logo-wrap svg{width:100%;max-width:280px;height:auto}
 .ig{margin-bottom:16px;text-align:left}.ig label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
 .ig input,.ig select,.ig textarea{width:100%;padding:13px 15px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--text);background:var(--surface-alt);outline:none;transition:border .2s}
 .ig input:focus,.ig select:focus,.ig textarea:focus{border-color:var(--accent)}.ig textarea{resize:vertical;min-height:60px}
@@ -135,8 +135,47 @@
 <!-- LOGIN -->
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
-    <div class="brand">Toca do Coelho</div>
-    <div class="subtitle">Checklists Operacionais</div>
+    <div class="logo-wrap">
+<svg viewBox="0 0 680 500" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="680" height="500" rx="28" fill="#2C2520"/>
+<rect x="2" y="2" width="676" height="496" rx="27" fill="none" stroke="#C8553D" stroke-width="1" opacity="0.3"/>
+<path d="M40 40 L80 40 L80 44 L44 44 L44 80 L40 80 Z" fill="#C8553D" opacity="0.4"/>
+<path d="M640 40 L600 40 L600 44 L636 44 L636 80 L640 80 Z" fill="#C8553D" opacity="0.4"/>
+<path d="M40 460 L80 460 L80 456 L44 456 L44 420 L40 420 Z" fill="#C8553D" opacity="0.4"/>
+<path d="M640 460 L600 460 L600 456 L636 456 L636 420 L640 420 Z" fill="#C8553D" opacity="0.4"/>
+<g transform="translate(340, 175)">
+<ellipse cx="-22" cy="-75" rx="14" ry="48" fill="#C8553D" transform="rotate(-12, -22, -75)"/>
+<ellipse cx="-22" cy="-75" rx="8" ry="38" fill="#4A3728" transform="rotate(-12, -22, -75)"/>
+<ellipse cx="22" cy="-75" rx="14" ry="48" fill="#C8553D" transform="rotate(12, 22, -75)"/>
+<ellipse cx="22" cy="-75" rx="8" ry="38" fill="#4A3728" transform="rotate(12, 22, -75)"/>
+<circle cx="0" cy="-18" r="32" fill="#C8553D"/>
+<circle cx="0" cy="-14" r="22" fill="#D4674F" opacity="0.3"/>
+<ellipse cx="-11" cy="-24" rx="4.5" ry="5.5" fill="#2C2520"/>
+<ellipse cx="11" cy="-24" rx="4.5" ry="5.5" fill="#2C2520"/>
+<circle cx="-9" cy="-26" r="1.5" fill="#F5F0EB" opacity="0.7"/>
+<circle cx="13" cy="-26" r="1.5" fill="#F5F0EB" opacity="0.7"/>
+<ellipse cx="0" cy="-13" rx="4" ry="3" fill="#4A3728"/>
+<path d="M-5 -9 Q0 -4 5 -9" fill="none" stroke="#4A3728" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="-15" y1="-14" x2="-35" y2="-20" stroke="#F5F0EB" stroke-width="0.8" opacity="0.4"/>
+<line x1="-15" y1="-11" x2="-35" y2="-11" stroke="#F5F0EB" stroke-width="0.8" opacity="0.4"/>
+<line x1="15" y1="-14" x2="35" y2="-20" stroke="#F5F0EB" stroke-width="0.8" opacity="0.4"/>
+<line x1="15" y1="-11" x2="35" y2="-11" stroke="#F5F0EB" stroke-width="0.8" opacity="0.4"/>
+<ellipse cx="0" cy="24" rx="28" ry="22" fill="#C8553D"/>
+</g>
+<g transform="translate(380, 200)">
+<circle cx="0" cy="0" r="16" fill="#4A7C59"/>
+<circle cx="0" cy="0" r="14" fill="none" stroke="#EAF3EC" stroke-width="1" opacity="0.3"/>
+<polyline points="-6 0 -2 5 7 -5" fill="none" stroke="#FFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<text x="340" y="290" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#F5F0EB" letter-spacing="6" opacity="0.5">CHECKLIST</text>
+<text x="340" y="335" text-anchor="middle" font-family="Georgia, serif" font-size="42" fill="#C8553D" font-weight="700" letter-spacing="2">Toca do Coelho</text>
+<line x1="220" y1="355" x2="460" y2="355" stroke="#C8553D" stroke-width="0.8" opacity="0.4"/>
+<circle cx="340" cy="355" r="3" fill="#C8553D" opacity="0.5"/>
+<circle cx="220" cy="355" r="2" fill="#C8553D" opacity="0.3"/>
+<circle cx="460" cy="355" r="2" fill="#C8553D" opacity="0.3"/>
+<text x="340" y="387" text-anchor="middle" font-family="Helvetica, sans-serif" font-size="13" fill="#8C7E72" letter-spacing="4">OPERAÇÕES &amp; CONTROLE</text>
+</svg>
+    </div>
     <div class="ig"><label>Usuário</label><input type="text" id="loginUser" placeholder="seu usuário" autocomplete="username"></div>
     <div class="ig"><label>Senha</label><input type="password" id="loginPass" placeholder="sua senha" autocomplete="current-password"></div>
     <button class="btn btn-p" onclick="doLogin()">Entrar</button>
