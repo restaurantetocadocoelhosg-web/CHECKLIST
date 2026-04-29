@@ -135,10 +135,136 @@
 .sig-container canvas{display:block;width:100%;height:100px;border-radius:8px;touch-action:none}
 .sig-clear{position:absolute;top:3px;right:3px;font-size:9px;background:var(--surface-alt);border:1px solid var(--border);border-radius:3px;padding:2px 5px;cursor:pointer}
 @media(max-width:400px){.login-card{padding:24px 16px}.main{padding:10px}}
+.terms-overlay{position:fixed;inset:0;background:rgba(44,37,32,.85);z-index:500;display:none;align-items:center;justify-content:center;padding:10px}.terms-overlay.on{display:flex}
+.terms-box{background:var(--surface);border-radius:16px;width:100%;max-width:480px;max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--sh2);overflow:hidden}
+.terms-header{padding:16px 18px 12px;border-bottom:1px solid var(--border);text-align:center;flex-shrink:0}
+.terms-header h2{font-family:'Playfair Display',serif;font-size:18px;color:var(--accent);margin-bottom:4px}
+.terms-header p{font-size:10px;color:var(--text2)}
+.terms-body{flex:1;overflow-y:auto;padding:16px 18px;font-size:11px;line-height:1.7;color:var(--text);-webkit-overflow-scrolling:touch}
+.terms-body h3{font-size:12px;font-weight:700;margin:14px 0 6px;color:var(--text)}
+.terms-body h4{font-size:11px;font-weight:600;margin:10px 0 4px;color:var(--accent)}
+.terms-body p{margin-bottom:8px}
+.terms-body .term-highlight{background:var(--amber-l);padding:6px 10px;border-radius:8px;border-left:3px solid var(--amber);margin:8px 0;font-weight:500}
+.terms-body .term-apps{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.terms-body .term-app-tag{background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:600}
+.terms-footer{padding:14px 18px;border-top:1px solid var(--border);flex-shrink:0}
+.terms-footer .terms-check{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;cursor:pointer}
+.terms-footer .terms-check input{width:16px;height:16px;accent-color:var(--accent);margin-top:1px;flex-shrink:0}
+.terms-footer .terms-check span{font-size:10px;line-height:1.5;color:var(--text)}
+.terms-footer .btn-accept{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;opacity:.4;pointer-events:none;transition:all .2s}
+.terms-footer .btn-accept.ready{opacity:1;pointer-events:auto}
+.terms-footer .btn-decline{width:100%;padding:10px;background:transparent;color:var(--text2);border:none;font-family:inherit;font-size:11px;cursor:pointer;margin-top:6px}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
+
+<!-- TERMS MODAL -->
+<div class="terms-overlay" id="termsOverlay">
+<div class="terms-box">
+<div class="terms-header">
+<h2>Toca do Coelho</h2>
+<p>TERMO DE CONSENTIMENTO E RESPONSABILIDADE — v1.0</p>
+</div>
+<div class="terms-body" id="termsBody">
+
+<p style="text-align:center;font-weight:600;font-size:12px;margin-bottom:12px">TERMO DE CONSENTIMENTO E RESPONSABILIDADE PARA UTILIZAÇÃO DE SISTEMAS INFORMATIZADOS DE GESTÃO</p>
+
+<p><strong>RESTAURANTE TOCA DO COELHO E LANCHONETE LTDA</strong><br>
+CNPJ: 48.872.365/0001-32<br>
+Rua Capitão Juvenal Figueiredo, nº 71, Loja 02, Lote 875<br>
+Bairro Colubandê (Coelho), São Gonçalo/RJ — CEP 24.744-560<br>
+Representante Legal: Nayara da Conceição Chaves — Administradora</p>
+
+<h3>CLÁUSULA 1ª — DO OBJETO</h3>
+<p>O presente Termo regula as condições de uso dos sistemas informatizados de gestão ("Sistemas") de propriedade e titularidade exclusiva do RESTAURANTE TOCA DO COELHO E LANCHONETE LTDA ("Empresa"), disponibilizados como ferramentas auxiliares de trabalho ao COLABORADOR identificado por meio de login pessoal e intransferível.</p>
+
+<h4>Sistemas abrangidos por este Termo:</h4>
+<div class="term-apps">
+<span class="term-app-tag">📋 Toca Checklist</span>
+<span class="term-app-tag">📦 Toca Estoque</span>
+<span class="term-app-tag">📖 Receituários</span>
+</div>
+<p>O presente Termo aplica-se a todos os sistemas acima listados, bem como a quaisquer outros sistemas, módulos ou aplicações que venham a ser disponibilizados pela Empresa ao COLABORADOR no futuro, mediante simples comunicação.</p>
+
+<h3>CLÁUSULA 2ª — DA NATUREZA DO ACESSO E USO VOLUNTÁRIO EM DISPOSITIVO PESSOAL</h3>
+<p>2.1. Os Sistemas destinam-se ao uso exclusivo nas dependências do estabelecimento, durante a jornada regular de trabalho do COLABORADOR, em equipamento fornecido pela Empresa para esta finalidade.</p>
+<p class="term-highlight">2.2. A EVENTUAL UTILIZAÇÃO DOS SISTEMAS EM DISPOSITIVO PESSOAL DO COLABORADOR (telefone celular, tablet, computador particular ou qualquer outro equipamento de sua propriedade) DECORRE DE ATO VOLUNTÁRIO, POR MERA CONVENIÊNCIA E LIBERALIDADE DO PRÓPRIO COLABORADOR, SEM QUALQUER DETERMINAÇÃO, IMPOSIÇÃO OU SOLICITAÇÃO POR PARTE DA EMPRESA.</p>
+<p>2.3. A Empresa NÃO exige, NÃO recomenda e NÃO condiciona a prestação de serviços à instalação ou uso dos Sistemas em dispositivos pessoais dos colaboradores. O acesso remoto, quando ocorrer, será sempre de iniciativa exclusiva do COLABORADOR.</p>
+<p>2.4. A Empresa disponibiliza, em suas dependências, os meios e equipamentos necessários e suficientes para a operação dos Sistemas durante o horário de expediente.</p>
+
+<h3>CLÁUSULA 3ª — DA ISENÇÃO DE RESPONSABILIDADE POR DANOS AO DISPOSITIVO PESSOAL</h3>
+<p class="term-highlight">3.1. A Empresa NÃO se responsabiliza, em nenhuma hipótese, por quaisquer danos — físicos, lógicos, materiais ou imateriais — causados ao dispositivo pessoal do COLABORADOR decorrentes do uso dos Sistemas ou do manuseio do aparelho durante a operação dos mesmos, incluindo, mas não se limitando a:</p>
+<p>a) Danos físicos ao aparelho, tais como quedas, quebra de tela, infiltração de líquidos, desgaste de bateria, superaquecimento ou qualquer avaria mecânica ou estrutural;</p>
+<p>b) Danos lógicos, tais como perda de dados pessoais, contaminação por vírus ou malware, lentidão, travamentos, incompatibilidade com aplicativos de terceiros ou consumo excessivo de armazenamento;</p>
+<p>c) Custos decorrentes do uso, tais como consumo de dados móveis (3G/4G/5G), consumo de energia elétrica para recarga, ou quaisquer despesas com manutenção, reparo ou substituição do aparelho;</p>
+<p>d) Furto, roubo, perda ou extravio do dispositivo pessoal, ainda que ocorra nas dependências do estabelecimento ou durante o horário de trabalho.</p>
+<p>3.2. O COLABORADOR declara estar ciente de que a utilização dos Sistemas em seu dispositivo pessoal é de sua inteira e exclusiva responsabilidade, assumindo todos os riscos inerentes a esta decisão voluntária, nos termos dos Arts. 186 e 927 do Código Civil.</p>
+<p>3.3. A Empresa não oferece garantia, seguro, reembolso ou indenização de qualquer natureza relativamente ao dispositivo pessoal do COLABORADOR utilizado para acesso aos Sistemas.</p>
+
+<h3>CLÁUSULA 4ª — DA NÃO CONFIGURAÇÃO DE JORNADA EXTRAORDINÁRIA</h3>
+<p>4.1. Nos termos do Art. 4º, §2º, da CLT (com redação dada pela Lei nº 13.467/2017 — Reforma Trabalhista), o acesso aos Sistemas fora do horário de trabalho, por iniciativa do COLABORADOR, NÃO SERÁ CONSIDERADO COMO TEMPO À DISPOSIÇÃO DO EMPREGADOR, não configurando, em nenhuma hipótese, hora extra, sobreaviso, prontidão ou qualquer outra modalidade de jornada extraordinária.</p>
+<p>4.2. Em consonância com o Art. 75-B, §5º, da CLT (incluído pela Lei nº 14.442/2022 — Lei do Trabalho Remoto): "O tempo de uso de equipamentos tecnológicos e de infraestrutura necessária, bem como de softwares, de ferramentas digitais ou de aplicações de internet utilizados para o teletrabalho, fora da jornada de trabalho normal do empregado NÃO CONSTITUI TEMPO À DISPOSIÇÃO OU REGIME DE PRONTIDÃO OU DE SOBREAVISO, exceto se houver previsão em acordo individual ou em acordo ou convenção coletiva de trabalho."</p>
+<p>4.3. O COLABORADOR declara ter ciência de que não há qualquer obrigação, expectativa ou necessidade de acessar os Sistemas fora do seu horário de trabalho, e que qualquer acesso eventual nessas condições é realizado por sua exclusiva vontade e conveniência, sem qualquer repercussão trabalhista.</p>
+
+<h3>CLÁUSULA 5ª — DAS CREDENCIAIS DE ACESSO</h3>
+<p>5.1. O acesso aos Sistemas é concedido mediante credenciais individuais (login e senha), pessoais e intransferíveis, nos termos do Art. 482 da CLT.</p>
+<p>5.2. O COLABORADOR é o único responsável pela guarda, sigilo e utilização de suas credenciais, respondendo por toda e qualquer operação realizada com seu login.</p>
+<p>5.3. O compartilhamento de credenciais com terceiros, inclusive outros colaboradores, constitui falta grave passível de sanção disciplinar.</p>
+<p>5.4. Em caso de suspeita de comprometimento das credenciais, o COLABORADOR deverá comunicar imediatamente a administração.</p>
+
+<h3>CLÁUSULA 6ª — DAS OBRIGAÇÕES DO COLABORADOR</h3>
+<p>O COLABORADOR compromete-se a:</p>
+<p>a) Utilizar os Sistemas exclusivamente para as finalidades de gestão patrimonial, operacional e de estoque do restaurante;</p>
+<p>b) Registrar informações verdadeiras, completas e fidedignas em todos os lançamentos, respondendo civil e trabalhamente por inserções dolosas ou culposas de dados falsos;</p>
+<p>c) Não reproduzir, divulgar, copiar ou transmitir a terceiros quaisquer dados, relatórios, receitas, informações de preços, fornecedores, custos ou quantidades obtidas por meio dos Sistemas;</p>
+<p>d) Comunicar imediatamente à administração qualquer irregularidade, erro ou uso indevido dos Sistemas;</p>
+<p>e) Não tentar acessar funcionalidades, dados ou perfis além daqueles correspondentes ao seu nível de autorização.</p>
+
+<h3>CLÁUSULA 7ª — DO REGISTRO E AUDITORIA DAS OPERAÇÕES</h3>
+<p class="term-highlight">7.1. TODAS AS OPERAÇÕES REALIZADAS NOS SISTEMAS SÃO AUTOMATICAMENTE REGISTRADAS, incluindo: data, hora, tipo de operação, identificação do usuário, endereço IP e dispositivo utilizado.</p>
+<p>7.2. Estes registros constituem evidência documental para fins de auditoria interna, controle patrimonial e, quando necessário, instrução de procedimentos administrativos, disciplinares ou judiciais, nos termos do Art. 225 do Código Civil e Art. 369 do Código de Processo Civil.</p>
+<p>7.3. O COLABORADOR declara estar ciente e de acordo com o registro automático de todas as suas ações nos Sistemas.</p>
+
+<h3>CLÁUSULA 8ª — DA PROPRIEDADE INTELECTUAL E DOS DADOS</h3>
+<p>8.1. Os Sistemas, incluindo seu código-fonte, interface, funcionalidades e base de dados, são de PROPRIEDADE EXCLUSIVA DA EMPRESA.</p>
+<p>8.2. Todos os dados inseridos, processados, armazenados ou gerados por meio dos Sistemas pertencem exclusivamente à Empresa, ainda que inseridos pelo COLABORADOR.</p>
+<p>8.3. O COLABORADOR não adquire, em nenhuma hipótese, qualquer direito de propriedade, uso ou posse sobre os dados dos Sistemas.</p>
+
+<h3>CLÁUSULA 9ª — DA CONFIDENCIALIDADE E SEGREDO EMPRESARIAL</h3>
+<p>9.1. O COLABORADOR reconhece que as informações acessadas por meio dos Sistemas — incluindo preços de aquisição, custos operacionais, quantidades em estoque, receitas, fichas técnicas, dados de fornecedores e estratégias de compra — possuem NATUREZA CONFIDENCIAL E CONSTITUEM SEGREDO EMPRESARIAL, nos termos da Lei nº 9.279/1996 (Lei de Propriedade Industrial), Art. 195, incisos XI e XII.</p>
+<p>9.2. A violação do dever de confidencialidade pode caracterizar justa causa para rescisão contratual (Art. 482, "g", da CLT — violação de segredo da empresa), além de responsabilização civil por perdas e danos (Art. 927 do Código Civil).</p>
+<p>9.3. A obrigação de confidencialidade permanece vigente mesmo após o término do vínculo empregatício, pelo prazo de 2 (dois) anos.</p>
+
+<h3>CLÁUSULA 10ª — DO DESLIGAMENTO E REVOGAÇÃO DE ACESSO</h3>
+<p>10.1. Em caso de rescisão contratual, por qualquer modalidade, o acesso do COLABORADOR aos Sistemas será imediatamente revogado, sem direito à cópia, exportação ou retenção de quaisquer dados.</p>
+<p>10.2. O COLABORADOR deverá, quando solicitado, excluir de seus dispositivos pessoais quaisquer acessos, favoritos, senhas salvas ou dados relacionados aos Sistemas.</p>
+
+<h3>CLÁUSULA 11ª — DA PROTEÇÃO DE DADOS PESSOAIS (LGPD)</h3>
+<p>11.1. Os dados pessoais do COLABORADOR coletados pelos Sistemas (nome, login, IP, horários de acesso) serão tratados em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD), para a finalidade legítima de gestão empresarial e segurança patrimonial, com base no legítimo interesse do controlador (Art. 7º, IX) e execução do contrato de trabalho (Art. 7º, V).</p>
+
+<h3>CLÁUSULA 12ª — DAS DISPOSIÇÕES FINAIS</h3>
+<p>12.1. Este Termo constitui instrumento complementar ao contrato de trabalho vigente, não o substituindo.</p>
+<p>12.2. A Empresa reserva-se o direito de atualizar este Termo, mediante nova solicitação de aceite.</p>
+<p>12.3. A nulidade de qualquer cláusula não prejudicará as demais disposições.</p>
+<p>12.4. Fica eleito o Foro da Comarca de São Gonçalo/RJ para dirimir quaisquer controvérsias oriundas do presente instrumento.</p>
+
+<p style="text-align:center;margin-top:14px;font-size:10px;color:var(--text2)">Versão 1.0 — Vigente a partir de abril de 2026</p>
+<p style="text-align:center;font-size:9px;color:var(--text2)">O aceite digital possui validade jurídica nos termos do Art. 10, §2º, da MP nº 2.200-2/2001, do Art. 107 do Código Civil e do Marco Civil da Internet (Lei nº 12.965/2014, Art. 7º, I).</p>
+
+<p style="font-size:9px;color:var(--text2);margin-top:12px"><strong>FUNDAMENTAÇÃO LEGAL:</strong> CLT, Art. 4º, §2º · CLT, Art. 75-B, §5º · CLT, Art. 482 · CC, Arts. 107, 186, 225, 927 · CPC, Art. 369 · Lei 9.279/1996, Art. 195 · LGPD (Lei 13.709/2018) · MP 2.200-2/2001 · Marco Civil da Internet (Lei 12.965/2014)</p>
+</div>
+<div class="terms-footer">
+<label class="terms-check">
+<input type="checkbox" id="termsCheckbox" onchange="document.getElementById('btnAcceptTerms').className='btn-accept'+(this.checked?' ready':'')">
+<span>Declaro que li integralmente e compreendi todos os termos acima. Aceito as condições de uso dos Sistemas da Toca do Coelho, incluindo a isenção de responsabilidade por danos ao meu dispositivo pessoal.</span>
+</label>
+<button class="btn-accept" id="btnAcceptTerms" onclick="acceptTerms()">✅ Aceitar e Continuar</button>
+<button class="btn-decline" onclick="declineTerms()">Não concordo — sair</button>
+</div>
+</div>
+</div>
+
 <div id="loginScreen" class="login-screen"><div class="login-card"><div class="logo-wrap"><svg viewBox="0 0 680 500" xmlns="http://www.w3.org/2000/svg"><rect width="680" height="500" rx="28" fill="#2C2520"/><g transform="translate(340,175)"><ellipse cx="-22" cy="-75" rx="14" ry="48" fill="#C8553D" transform="rotate(-12,-22,-75)"/><ellipse cx="-22" cy="-75" rx="8" ry="38" fill="#4A3728" transform="rotate(-12,-22,-75)"/><ellipse cx="22" cy="-75" rx="14" ry="48" fill="#C8553D" transform="rotate(12,22,-75)"/><ellipse cx="22" cy="-75" rx="8" ry="38" fill="#4A3728" transform="rotate(12,22,-75)"/><circle cy="-18" r="32" fill="#C8553D"/><ellipse cy="-13" rx="4" ry="3" fill="#4A3728"/><ellipse cy="24" rx="28" ry="22" fill="#C8553D"/></g><g transform="translate(380,200)"><circle r="16" fill="#4A7C59"/><polyline points="-6 0-2 5 7-5" fill="none" stroke="#FFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g><text x="340" y="290" text-anchor="middle" font-family="Georgia,serif" font-size="18" fill="#F5F0EB" letter-spacing="6" opacity=".5">CHECKLIST</text><text x="340" y="335" text-anchor="middle" font-family="Georgia,serif" font-size="42" fill="#C8553D" font-weight="700" letter-spacing="2">Toca do Coelho</text><text x="340" y="387" text-anchor="middle" font-family="Helvetica,sans-serif" font-size="13" fill="#8C7E72" letter-spacing="4">OPERAÇÕES &amp; CONTROLE</text></svg></div><div class="ig"><label>Usuário</label><input type="text" id="loginUser" placeholder="seu usuário"></div><div class="ig"><label>Senha</label><input type="password" id="loginPass" placeholder="sua senha"></div><button class="btn btn-p" onclick="doLogin()">Entrar</button><div class="login-error" id="loginError">Usuário ou senha inválidos</div></div></div>
 
 <div id="app" class="app">
@@ -156,6 +282,7 @@
 <div class="adm-sec"><h3>📋 Tarefas</h3><div class="tabs" style="margin-bottom:6px"><button class="on" onclick="admTab='abertura';renderAdmTasks();this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Abertura</button><button onclick="admTab='fechamento';renderAdmTasks();this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Fechamento</button></div><div id="admTaskList"></div><button class="btn btn-g btn-sm" style="width:100%;margin-top:4px" onclick="openTaskModal()">+ Tarefa</button></div>
 <div class="adm-sec"><h3>📜 Log de Alterações</h3><div id="auditList"></div></div>
 <div class="adm-sec"><h3>⚠️ Ações</h3><button class="btn btn-s" style="width:100%" onclick="resetDay()">🔄 Resetar hoje</button></div>
+<div class="adm-sec"><h3>📜 Termos de Uso</h3><div id="termsReport"></div><button class="btn btn-blue btn-sm" style="width:100%;margin-top:4px" onclick="loadTermsReport()">🔄 Atualizar</button></div>
 <div class="spacer"></div></div>
 </div>
 <nav class="nav">
@@ -183,6 +310,14 @@
 <div class="modal-bg" id="bullModal"><div class="modal"><h3>Novo Aviso</h3><div class="ig"><label>Título</label><input id="bullTitle" placeholder="Ex: Evento amanhã"></div><div class="ig"><label>Mensagem</label><textarea id="bullMsg" rows="3" placeholder="Detalhes do aviso..."></textarea></div><div class="ig"><label>Prioridade</label><select id="bullPrio"><option value="normal">Normal</option><option value="urgente">Urgente</option></select></div><div class="modal-btns"><button class="btn btn-s" onclick="cModal('bullModal')">Cancelar</button><button class="btn btn-blue" onclick="saveBulletin()">Publicar</button></div></div></div>
 
 <script>
+const SUPA_URL='https://zuwdgyvbuaocbzckhhlm.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1d2RneXZidWFvY2J6Y2toaGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODk0MTUsImV4cCI6MjA5MjI2NTQxNX0._v0lytkvd854urjD0l45rX9vrzSUh0Ro2VuGINsLwmM';
+const TERMS_VERSION='1.0';
+const APP_NAME='checklist';
+
+async function supaGet(table,query){const r=await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});return r.json()}
+async function supaPost(table,data){const r=await fetch(`${SUPA_URL}/rest/v1/${table}`,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(data)});return r.json()}
+
 const API=async(u,o)=>{const r=await fetch(u,{headers:{'Content-Type':'application/json'},...o});return r.json()};
 const APIraw=async(u,o)=>fetch(u,{headers:{'Content-Type':'application/json'},...o});
 let user=null,tab='abertura',sectors=[],admTab='abertura',allUsers=[],allTasks=[],allSectors=[],allShifts=[];
@@ -201,9 +336,13 @@ function esc(s){return(s||'').replace(/'/g,"\\'")}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&user)fetch('/api/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:user.id,user_name:user.name})})});
 
 // AUTH
-async function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});if(!r.ok){document.getElementById('loginError').style.display='block';return}user=await r.json();localStorage.setItem('toca_user',JSON.stringify(user));showApp()}
-function doLogout(){user=null;localStorage.removeItem('toca_user');document.getElementById('app').classList.remove('on');document.getElementById('loginScreen').style.display=''}
-function tryAuto(){const s=localStorage.getItem('toca_user');if(s){user=JSON.parse(s);showApp();fetch('/api/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:user.id,user_name:user.name})})}}
+async function doLogin(){const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});if(!r.ok){document.getElementById('loginError').style.display='block';return}user=await r.json();localStorage.setItem('toca_user',JSON.stringify(user));await checkTermsAndShow()}
+function doLogout(){user=null;localStorage.removeItem('toca_user');document.getElementById('app').classList.remove('on');document.getElementById('loginScreen').style.display='';document.getElementById('termsOverlay').classList.remove('on');document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';document.getElementById('loginError').style.display='none'}
+function tryAuto(){const s=localStorage.getItem('toca_user');if(s){user=JSON.parse(s);checkTermsAndShow()}}
+async function checkTermsAndShow(){try{const data=await supaGet('terms_acceptance',`user_name=eq.${encodeURIComponent(user.name)}&terms_version=eq.${TERMS_VERSION}&select=id`);if(!data||data.length===0){showTerms();return;}showApp();fetch('/api/ping',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:user.id,user_name:user.name})})}catch(e){showTerms()}}
+function showTerms(){document.getElementById('loginScreen').style.display='none';document.getElementById('termsOverlay').classList.add('on');document.getElementById('termsCheckbox').checked=false;document.getElementById('btnAcceptTerms').className='btn-accept';document.getElementById('termsBody').scrollTop=0}
+async function acceptTerms(){if(!document.getElementById('termsCheckbox').checked)return;try{await supaPost('terms_acceptance',{user_name:user.name,app_name:APP_NAME,terms_version:TERMS_VERSION,accepted_at:new Date().toISOString(),ip_address:null,user_agent:navigator.userAgent});user.termsAccepted=true;localStorage.setItem('toca_user',JSON.stringify(user));document.getElementById('termsOverlay').classList.remove('on');toast('Termo aceito com sucesso!');showApp()}catch(e){toast('Erro ao registrar aceite',true)}}
+function declineTerms(){document.getElementById('termsOverlay').classList.remove('on');doLogout();toast('Você precisa aceitar o termo para usar o sistema',true)}
 function showApp(){document.getElementById('loginScreen').style.display='none';document.getElementById('app').classList.add('on');document.getElementById('userBadge').textContent=user.name;document.getElementById('navAdmin').style.display=isAdmin()?'':'none';document.getElementById('alertBtn').style.display=isAdmin()?'':'none';if(isAdmin())checkAlerts();setDate();loadDashboard()}
 function goPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on')}
 function setDate(){const d=new Date(),dias=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'],meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];document.getElementById('dayLbl').textContent=dias[d.getDay()];document.getElementById('dateLbl').textContent=d.getDate()+' de '+meses[d.getMonth()]}
@@ -285,7 +424,8 @@ async function openDetail(date,dtab){document.getElementById('detailTitle').text
 function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return day+'/'+m+'/'+y}
 
 // ADMIN
-async function loadAdmin(){allUsers=await API('/api/users');allTasks=await API('/api/tasks');allSectors=await API('/api/sectors');const s=await API('/api/settings');document.getElementById('rankToggle').className='toggle'+(s.ranking_visible==='1'?' on':'');renderUsers();renderAdmTasks();loadBulletins();loadAudit()}
+async function loadAdmin(){allUsers=await API('/api/users');allTasks=await API('/api/tasks');allSectors=await API('/api/sectors');const s=await API('/api/settings');document.getElementById('rankToggle').className='toggle'+(s.ranking_visible==='1'?' on':'');renderUsers();renderAdmTasks();loadBulletins();loadAudit();loadTermsReport()}
+async function loadTermsReport(){try{const data=await supaGet('terms_acceptance','terms_version=eq.'+TERMS_VERSION+'&order=accepted_at.desc&select=*');const users=await API('/api/users');const acceptedNames=new Set((data||[]).map(d=>d.user_name));let h='';users.filter(u=>u.active).forEach(u=>{const t=(data||[]).find(d=>d.user_name===u.name);if(t){const dt=new Date(t.accepted_at);h+=`<div class="audit-row"><div class="au-action" style="color:var(--green)">✅ ${u.name} <span style="font-size:9px;color:var(--text2)">(${u.username})</span></div><div class="au-meta">Aceito em ${dt.toLocaleDateString('pt-BR')} às ${dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} · App: ${t.app_name||'—'}</div></div>`}else{h+=`<div class="audit-row" style="border-left:3px solid var(--red)"><div class="au-action" style="color:var(--red)">⏳ ${u.name} <span style="font-size:9px;color:var(--text2)">(${u.username})</span></div><div class="au-meta">Pendente — ainda não aceitou o termo</div></div>`}});document.getElementById('termsReport').innerHTML=h||'<p style="color:var(--text2);font-size:9px">Nenhum dado</p>'}catch(e){document.getElementById('termsReport').innerHTML='<p style="color:var(--text2);font-size:9px">Erro ao carregar</p>'}}
 async function toggleRanking(){const el=document.getElementById('rankToggle');const v=el.classList.contains('on')?'0':'1';await API('/api/settings',{method:'POST',body:JSON.stringify({key:'ranking_visible',value:v})});el.classList.toggle('on');toast(v==='1'?'Liberado':'Oculto')}
 async function loadBulletins(){const data=await API('/api/bulletin');document.getElementById('bulletinList').innerHTML=data.length?data.map(b=>`<div class="bull-card${b.priority==='urgente'?' urgent':''}"><div class="bull-title">${b.title}</div><div class="bull-msg">${b.message}</div><div class="bull-meta">${b.created_by} · ${b.created_at}<button class="btn btn-sm btn-d" style="margin-left:6px" onclick="delBulletin(${b.id})">🗑️</button></div></div>`).join(''):'<p style="color:var(--text2);font-size:9px">Nenhum aviso</p>'}
 async function saveBulletin(){const t=document.getElementById('bullTitle').value.trim(),m=document.getElementById('bullMsg').value.trim();if(!t||!m)return;await API('/api/bulletin',{method:'POST',body:JSON.stringify({title:t,message:m,priority:document.getElementById('bullPrio').value,created_by:user.name})});cModal('bullModal');toast('Aviso publicado!');loadBulletins();document.getElementById('bullTitle').value='';document.getElementById('bullMsg').value=''}
