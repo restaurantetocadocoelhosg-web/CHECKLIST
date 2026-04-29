@@ -199,6 +199,7 @@ app.put('/api/tasks/:id',(req,res)=>{const{text,note,critical}=req.body;db.prepa
 app.delete('/api/tasks/:id',(req,res)=>{db.prepare('UPDATE tasks SET active=0 WHERE id=?').run(req.params.id);res.json({ok:true});});
 app.post('/api/reset-day',(req,res)=>{const d=today();db.prepare('DELETE FROM checklist_entries WHERE date=?').run(d);db.prepare('DELETE FROM finalizations WHERE date=?').run(d);db.prepare('DELETE FROM temperature_logs WHERE date=?').run(d);res.json({ok:true});});
 
+app.get('/backup-db-temp', (req, res) => { res.download(process.env.DB_PATH || './data/checklist.db', 'checklist.db'); });
 app.get('*',(req,res)=>{res.sendFile(path.join(__dirname,'public','index.html'));});
 const dataDir=path.dirname(process.env.DB_PATH||'./data/checklist.db');
 require('fs').mkdirSync(dataDir,{recursive:true});
