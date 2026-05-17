@@ -116,12 +116,12 @@ app.post('/api/toggle', async (req, res) => {
     await sb.from('ck_audit_log').insert({ action: 'check', detail: `Marcou: "${taskInfo?.text}"`, user_name, user_id, date: today(), time: nowTime() });
     return res.json({ ok: true });
   }
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
-  const { data: recent } = await sb.from('ck_checklist_entries').select('id').eq('done_by_id', user_id).eq('date', date).eq('done', 1).gte('done_at', fiveMinAgo);
+  const oneMinAgo = new Date(Date.now() - 1 * 60 * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+  const { data: recent } = await sb.from('ck_checklist_entries').select('id').eq('done_by_id', user_id).eq('date', date).eq('done', 1).gte('done_at', oneMinAgo);
   const recentCount = (recent || []).length;
   if (recentCount >= 2) {
     await sb.from('ck_admin_alerts').insert({ type: 'throttle', message: `${user_name} tentou marcar durante bloqueio`, user_name, user_id, date: today(), time: nowTime() });
-    return res.status(429).json({ error: 'Aguarde 5 minutos.', blocked: true });
+    return res.status(429).json({ error: 'Aguarde 1 minuto.', blocked: true });
   }
   await sb.rpc('ck_upsert_checklist_entry', { p_task_id: task_id, p_date: date, p_tab: tab, p_done: 1, p_done_by: user_name, p_done_by_id: user_id, p_done_at: nowTime() });
   await sb.from('ck_audit_log').insert({ action: 'check', detail: `Marcou: "${taskInfo?.text}"`, user_name, user_id, date: today(), time: nowTime() });
