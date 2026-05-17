@@ -4,8 +4,12 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SUPA_URL = process.env.SUPABASE_URL || 'https://zuwdgyvbuaocbzckhhlm.supabase.co';
-const SUPA_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1d2RneXZidWFvY2J6Y2toaGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODk0MTUsImV4cCI6MjA5MjI2NTQxNX0._v0lytkvd854urjD0l45rX9vrzSUh0Ro2VuGINsLwmM';
+const SUPA_URL = process.env.SUPABASE_URL;
+const SUPA_KEY = process.env.SUPABASE_KEY;
+if (!SUPA_URL || !SUPA_KEY) {
+  console.error('❌ SUPABASE_URL e SUPABASE_KEY são obrigatórios!');
+  process.exit(1);
+}
 
 const sb = createClient(SUPA_URL, SUPA_KEY);
 
@@ -20,16 +24,7 @@ function datesBack(n) { const d = []; for (let i = 0; i < n; i++) { const dt = n
 async function seed() {
   const { count } = await sb.from('ck_users').select('*', { count: 'exact', head: true });
   if (count === 0) {
-    await sb.from('ck_users').insert([
-      { username: 'nayara', password: 'nay123', name: 'Nayara', role: 'admin', sector: null },
-      { username: 'simone', password: 'sim123', name: 'Simone', role: 'gerente', sector: null },
-      { username: 'neia', password: 'neia123', name: 'Neia', role: 'gerente', sector: null },
-      { username: 'thiago', password: 'thi123', name: 'Thiago', role: 'operador', sector: 'salao' },
-      { username: 'leonardo', password: 'leo123', name: 'Leonardo', role: 'operador', sector: 'salao' },
-      { username: 'deivison', password: 'dei123', name: 'Deivison', role: 'operador', sector: 'cozinha' },
-      { username: 'paulo', password: 'pau123', name: 'Paulo', role: 'operador', sector: 'cozinha' },
-      { username: 'jorge', password: 'jor123', name: 'Jorge', role: 'operador', sector: 'cozinha' }
-    ]);
+    console.warn('⚠️  Nenhum usuário encontrado. Crie os usuários manualmente via painel admin ou via SQL no Supabase.');
   }
   const { count: tc } = await sb.from('ck_tasks').select('*', { count: 'exact', head: true });
   if (tc === 0) {
