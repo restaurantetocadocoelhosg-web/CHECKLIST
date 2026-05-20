@@ -353,7 +353,7 @@ app.post('/api/reset-day', async (req, res) => {
 
 // ===================== AGENTS =====================
 const N8N_BASE = process.env.N8N_URL || 'https://n8n-production-806f.up.railway.app';
-const N8N_API_KEY = process.env.N8N_API_KEY;
+const N8N_API_KEY = process.env.N8N_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MWI4ZThmYy02NDI0LTQ3MzQtYTNhZC1lOGZkNGViOTVjMjEiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiNGE3ODA5NDItZWRhMS00NzUxLWFkZTgtYjdhOTJmMzMxY2M0IiwiaWF0IjoxNzc4OTQ3NzM2LCJleHAiOjE3ODE0OTYwMDB9.xNDtcsU2SeYOp2q8fZDddZRWbP1A2K6TNTbaWoXra8g';
 const N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET;
 const N8N_MAESTRO_URL = process.env.N8N_MAESTRO_URL || `${N8N_BASE}/webhook/toca/maestro`;
 
