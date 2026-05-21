@@ -501,7 +501,7 @@ async function doAgentTrigger(agentEvent,payload){
   toast('Enviando para o Maestro...');
   try{
     var r=await fetch('/api/agents/trigger',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:agentEvent,payload:payload,user_id:user.id,user_name:user.name})});
-    var data=await r.json();
+    var txt=await r.text();var data=txt?JSON.parse(txt):{};
     if(!r.ok){toast('Erro: '+(data.error||'Falha'),true);return;}
     document.getElementById('arTitle').textContent='Resposta do agente';
     var rb=data.response;
