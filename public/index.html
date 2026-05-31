@@ -359,8 +359,11 @@ const APP_NAME='checklist';
 async function supaGet(table,query){const r=await fetch(`${SUPA_URL}/rest/v1/${table}?${query}`,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});return r.json()}
 async function supaPost(table,data){const r=await fetch(`${SUPA_URL}/rest/v1/${table}`,{method:'POST',headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(data)});return r.json()}
 
-const API=async(u,o)=>{const r=await fetch(u,{headers:{'Content-Type':'application/json'},...o});return r.json()};
-const APIraw=async(u,o)=>fetch(u,{headers:{'Content-Type':'application/json'},...o});
+// Injeta a identidade do usuário logado (?user_id) em toda chamada de API, p/ o
+// servidor validar permissão. Não duplica se a URL já tiver user_id.
+function addUid(u){if(user&&user.id&&!/[?&]user_id=/.test(u)){u+=(u.includes('?')?'&':'?')+'user_id='+encodeURIComponent(user.id)+'&user_name='+encodeURIComponent(user.name||'')}return u}
+const API=async(u,o)=>{const r=await fetch(addUid(u),{headers:{'Content-Type':'application/json'},...o});return r.json()};
+const APIraw=async(u,o)=>fetch(addUid(u),{headers:{'Content-Type':'application/json'},...o});
 let user=null,tab='abertura',sectors=[],admTab='abertura',allUsers=[],allTasks=[],allSectors=[],allShifts=[];
 let throttleUntil=0,throttleInterval=null,pendingSigSector=null;
 const DAYS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];

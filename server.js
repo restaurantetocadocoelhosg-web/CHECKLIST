@@ -41,6 +41,26 @@ async function requireUser(req, res) {
   return u;
 }
 
+// Identidade do REQUISITANTE sempre vem por query (?user_id=...), injetada pelo
+// front em todas as chamadas — evita confundir com user_id que viaja no body
+// (ex.: /api/shifts/bulk, onde body.user_id é o funcionário sendo escalado).
+async function requireManager(req, res) {
+  const user_id = req.query?.user_id || req.body?.user_id;
+  if (!user_id) { res.status(401).json({ error: 'Não autorizado' }); return null; }
+  const { data: u } = await sb.from('ck_users').select('id,role').eq('id', user_id).eq('active', 1).single();
+  if (!u || (u.role !== 'admin' && u.role !== 'gerente')) { res.status(403).json({ error: 'Acesso restrito (admin/gerente)' }); return null; }
+  return u;
+}
+async function requireAdminQ(req, res) {
+  const user_id = req.query?.user_id || req.body?.user_id;
+  if (!user_id) { res.status(401).json({ error: 'Não autorizado' }); return null; }
+  const { data: u } = await sb.from('ck_users').select('id,role').eq('id', user_id).eq('active', 1).single();
+  if (!u || u.role !== 'admin') { res.status(403).json({ error: 'Acesso restrito ao admin' }); return null; }
+  return u;
+}
+const mwManager = (req, res, next) => requireManager(req, res).then(u => { if (u) next(); }).catch(() => res.status(500).json({ error: 'erro auth' }));
+const mwAdmin = (req, res, next) => requireAdminQ(req, res).then(u => { if (u) next(); }).catch(() => res.status(500).json({ error: 'erro auth' }));
+
 // ===================== SEED =====================
 let _seedDone = false;
 async function seed() {
@@ -190,16 +210,16 @@ app.post('/api/finalize', async (req, res) => {
 });
 
 app.get('/api/bulletin', async (req, res) => { const { data } = await sb.from('ck_bulletin').select('*').eq('active', 1).order('id', { ascending: false }); res.json(data || []); });
-app.post('/api/bulletin', async (req, res) => { const { title, message, priority, created_by } = req.body; await sb.from('ck_bulletin').insert({ title, message, created_by, created_at: nowTime(), date: today(), priority: priority || 'normal' }); res.json({ ok: true }); });
-app.put('/api/bulletin/:id', async (req, res) => { await sb.from('ck_bulletin').update({ title: req.body.title, message: req.body.message, priority: req.body.priority || 'normal' }).eq('id', req.params.id); res.json({ ok: true }); });
-app.delete('/api/bulletin/:id', async (req, res) => { await sb.from('ck_bulletin').update({ active: 0 }).eq('id', req.params.id); res.json({ ok: true }); });
+app.post('/api/bulletin', mwManager, async (req, res) => { const { title, message, priority, created_by } = req.body; await sb.from('ck_bulletin').insert({ title, message, created_by, created_at: nowTime(), date: today(), priority: priority || 'normal' }); res.json({ ok: true }); });
+app.put('/api/bulletin/:id', mwManager, async (req, res) => { await sb.from('ck_bulletin').update({ title: req.body.title, message: req.body.message, priority: req.body.priority || 'normal' }).eq('id', req.params.id); res.json({ ok: true }); });
+app.delete('/api/bulletin/:id', mwManager, async (req, res) => { await sb.from('ck_bulletin').update({ active: 0 }).eq('id', req.params.id); res.json({ ok: true }); });
 
-app.get('/api/audit', async (req, res) => { const { data } = await sb.from('ck_audit_log').select('*').in('date', datesBack(parseInt(req.query.days) || 3)).order('id', { ascending: false }).limit(100); res.json(data || []); });
+app.get('/api/audit', mwManager, async (req, res) => { const { data } = await sb.from('ck_audit_log').select('*').in('date', datesBack(parseInt(req.query.days) || 3)).order('id', { ascending: false }).limit(100); res.json(data || []); });
 
 app.get('/api/occurrences', async (req, res) => { const { data } = await sb.from('ck_occurrences').select('*').in('date', datesBack(parseInt(req.query.days) || 7)).order('id', { ascending: false }); res.json(data || []); });
 app.post('/api/occurrences', async (req, res) => { await sb.from('ck_occurrences').insert({ text: req.body.text, category: req.body.category || 'geral', priority: req.body.priority || 'normal', created_by: req.body.created_by, created_at: nowTime(), date: today() }); res.json({ ok: true }); });
 app.post('/api/occurrences/:id/resolve', async (req, res) => { await sb.from('ck_occurrences').update({ resolved: 1, resolved_by: req.body.resolved_by, resolved_at: nowTime() }).eq('id', req.params.id); res.json({ ok: true }); });
-app.delete('/api/occurrences/:id', async (req, res) => { await sb.from('ck_occurrences').delete().eq('id', req.params.id); res.json({ ok: true }); });
+app.delete('/api/occurrences/:id', mwManager, async (req, res) => { await sb.from('ck_occurrences').delete().eq('id', req.params.id); res.json({ ok: true }); });
 
 // ===================== DASHBOARD =====================
 app.get('/api/dashboard', async (req, res) => {
@@ -234,10 +254,10 @@ app.get('/api/dashboard', async (req, res) => {
   res.json({ todayStats, weeklyRates, presentToday: presentToday || 0, openOccurrences: openOccurrences || 0, tempAlerts: (tempAlertData || []).length, expiringCount, bulletins: bulletins || [] });
 });
 
-app.get('/api/alerts', async (req, res) => { const { data } = await sb.from('ck_admin_alerts').select('*').in('date', datesBack(3)).order('id', { ascending: false }); res.json(data || []); });
-app.post('/api/alerts/seen', async (req, res) => { await sb.from('ck_admin_alerts').update({ seen: 1 }).eq('seen', 0); res.json({ ok: true }); });
+app.get('/api/alerts', mwManager, async (req, res) => { const { data } = await sb.from('ck_admin_alerts').select('*').in('date', datesBack(3)).order('id', { ascending: false }); res.json(data || []); });
+app.post('/api/alerts/seen', mwManager, async (req, res) => { await sb.from('ck_admin_alerts').update({ seen: 1 }).eq('seen', 0); res.json({ ok: true }); });
 app.get('/api/settings', async (req, res) => { const { data } = await sb.from('ck_settings').select('*'); const obj = {}; (data || []).forEach(r => obj[r.key] = r.value); res.json(obj); });
-app.post('/api/settings', async (req, res) => { await sb.rpc('ck_upsert_setting', { p_key: req.body.key, p_value: req.body.value }); res.json({ ok: true }); });
+app.post('/api/settings', mwManager, async (req, res) => { await sb.rpc('ck_upsert_setting', { p_key: req.body.key, p_value: req.body.value }); res.json({ ok: true }); });
 
 // ===================== TEMPERATURE =====================
 app.get('/api/temperatures', async (req, res) => {
@@ -277,7 +297,7 @@ app.get('/api/shifts', async (req, res) => {
   const sm = Object.fromEntries((secs || []).map(s => [s.id, s]));
   res.json(shifts.filter(s => um[s.user_id] && sm[s.sector_id]).map(s => ({ ...s, user_name: um[s.user_id], sector_name: sm[s.sector_id].name, sector_icon: sm[s.sector_id].icon })));
 });
-app.post('/api/shifts/bulk', async (req, res) => { const { user_id, assignments } = req.body; await sb.from('ck_shifts').delete().eq('user_id', user_id); if (assignments?.length) await sb.from('ck_shifts').insert(assignments.map(a => ({ user_id, sector_id: a.sector_id, day_of_week: a.day_of_week }))); res.json({ ok: true }); });
+app.post('/api/shifts/bulk', mwManager, async (req, res) => { const { user_id, assignments } = req.body; await sb.from('ck_shifts').delete().eq('user_id', user_id); if (assignments?.length) await sb.from('ck_shifts').insert(assignments.map(a => ({ user_id, sector_id: a.sector_id, day_of_week: a.day_of_week }))); res.json({ ok: true }); });
 app.get('/api/ranking', async (req, res) => {
   const dates = datesBack(parseInt(req.query.days) || 7);
   const { data: rvRow } = await sb.from('ck_settings').select('value').eq('key', 'ranking_visible').maybeSingle();
@@ -337,14 +357,14 @@ app.get('/api/reports/:date/:tab', async (req, res) => {
 app.get('/api/export/pdf', (req, res) => { res.redirect(`/api/reports/${req.query.date || today()}/abertura`); });
 
 // ===================== ADMIN =====================
-app.get('/api/users', async (req, res) => { const { data } = await sb.from('ck_users').select('id,username,name,role,sector,active').order('name'); res.json(data || []); });
-app.post('/api/users', async (req, res) => { const hash = bcrypt.hashSync(req.body.password, 10); const { error } = await sb.from('ck_users').insert({ username: req.body.username.toLowerCase(), password: hash, name: req.body.name, role: req.body.role || 'operador', sector: req.body.sector || null }); if (error) return res.status(400).json({ error: 'Usuário já existe' }); res.json({ ok: true }); });
-app.put('/api/users/:id', async (req, res) => { const updates = {}; ['name', 'role', 'sector', 'active'].forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; }); if (req.body.password) updates.password = bcrypt.hashSync(req.body.password, 10); if (!Object.keys(updates).length) return res.status(400).json({ error: 'Nada' }); await sb.from('ck_users').update(updates).eq('id', req.params.id); res.json({ ok: true }); });
-app.delete('/api/users/:id', async (req, res) => { await sb.from('ck_users').delete().eq('id', req.params.id); res.json({ ok: true }); });
-app.get('/api/tasks', async (req, res) => { const { data } = await sb.from('ck_tasks').select('*').eq('active', 1).order('tab').order('sector_id').order('sort_order'); res.json(data || []); });
-app.post('/api/tasks', async (req, res) => { const { data: maxRow } = await sb.from('ck_tasks').select('sort_order').eq('sector_id', req.body.sector_id).eq('tab', req.body.tab).order('sort_order', { ascending: false }).limit(1).maybeSingle(); await sb.from('ck_tasks').insert({ sector_id: req.body.sector_id, tab: req.body.tab, text: req.body.text, note: req.body.note || null, sort_order: (maxRow?.sort_order || 0) + 1, critical: req.body.critical ? 1 : 0 }); res.json({ ok: true }); });
-app.put('/api/tasks/:id', async (req, res) => { await sb.from('ck_tasks').update({ text: req.body.text, note: req.body.note || null, critical: req.body.critical ? 1 : 0 }).eq('id', req.params.id); res.json({ ok: true }); });
-app.delete('/api/tasks/:id', async (req, res) => { await sb.from('ck_tasks').update({ active: 0 }).eq('id', req.params.id); res.json({ ok: true }); });
+app.get('/api/users', mwManager, async (req, res) => { const { data } = await sb.from('ck_users').select('id,username,name,role,sector,active').order('name'); res.json(data || []); });
+app.post('/api/users', mwManager, async (req, res) => { const hash = bcrypt.hashSync(req.body.password, 10); const { error } = await sb.from('ck_users').insert({ username: req.body.username.toLowerCase(), password: hash, name: req.body.name, role: req.body.role || 'operador', sector: req.body.sector || null }); if (error) return res.status(400).json({ error: 'Usuário já existe' }); res.json({ ok: true }); });
+app.put('/api/users/:id', mwManager, async (req, res) => { const updates = {}; ['name', 'role', 'sector', 'active'].forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; }); if (req.body.password) updates.password = bcrypt.hashSync(req.body.password, 10); if (!Object.keys(updates).length) return res.status(400).json({ error: 'Nada' }); await sb.from('ck_users').update(updates).eq('id', req.params.id); res.json({ ok: true }); });
+app.delete('/api/users/:id', mwAdmin, async (req, res) => { await sb.from('ck_users').delete().eq('id', req.params.id); res.json({ ok: true }); });
+app.get('/api/tasks', mwManager, async (req, res) => { const { data } = await sb.from('ck_tasks').select('*').eq('active', 1).order('tab').order('sector_id').order('sort_order'); res.json(data || []); });
+app.post('/api/tasks', mwManager, async (req, res) => { const { data: maxRow } = await sb.from('ck_tasks').select('sort_order').eq('sector_id', req.body.sector_id).eq('tab', req.body.tab).order('sort_order', { ascending: false }).limit(1).maybeSingle(); await sb.from('ck_tasks').insert({ sector_id: req.body.sector_id, tab: req.body.tab, text: req.body.text, note: req.body.note || null, sort_order: (maxRow?.sort_order || 0) + 1, critical: req.body.critical ? 1 : 0 }); res.json({ ok: true }); });
+app.put('/api/tasks/:id', mwManager, async (req, res) => { await sb.from('ck_tasks').update({ text: req.body.text, note: req.body.note || null, critical: req.body.critical ? 1 : 0 }).eq('id', req.params.id); res.json({ ok: true }); });
+app.delete('/api/tasks/:id', mwManager, async (req, res) => { await sb.from('ck_tasks').update({ active: 0 }).eq('id', req.params.id); res.json({ ok: true }); });
 
 app.post('/api/reset-day', async (req, res) => {
   const u = await requireAdmin(req, res); if (!u) return;
