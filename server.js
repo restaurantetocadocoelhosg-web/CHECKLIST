@@ -448,6 +448,94 @@ app.post('/api/agents/trigger', async (req, res) => {
   }
 });
 
+// ===================== ESCALA IA (admin-only) =====================
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const REGRAS_ESCALA = `Você monta a ESCALA SEMANAL de funcionários do Restaurante Toca do Coelho (São Gonçalo/RJ).
+A semana vai de SEGUNDA a DOMINGO. Use SEMPRE a escala anterior enviada para dar continuidade às folgas, alternâncias e ao dia-sim-dia-não. Se a escala anterior não vier, avise e marque suposições com [VERIFICAR].
+
+== GARÇONS / SALÃO ==
+Garçons: Leonardo, Gabriel, Tiago, Wellington.
+- Leonardo trabalha em dia sim / dia não, continuando a sequência da última escala.
+- Seg a Sex: 2 garçons por dia.
+- Sábado: 3 garçons.
+- Domingo: 4 garçons (todos).
+- Cada garçom deve trabalhar pelo menos 4 dias na semana (salvo exceção necessária).
+
+== COPA ==
+- Yasmim é da COPA (não da cozinha). Liste-a SEMPRE separada, em uma linha "Copa:" própria, afastada da cozinha.
+- Yasmim folga toda SEGUNDA.
+- Yasmim folga também no SEGUNDO DOMINGO do mês.
+- Quando Yasmim estiver de folga, Paulo (auxiliar) NÃO pode estar de folga (ele cobre a Copa).
+
+== COZINHA — COZINHEIROS ==
+Cozinheiros: Fabrício, Igor, Davisson, Jorge.
+- NUNCA menos de 2 cozinheiros por dia.
+- Jorge folga toda QUARTA e também no SEGUNDO DOMINGO do mês.
+- Davisson alterna por semana: numa semana folga SEG e SEX; na outra folga TER e SÁB. Continue a sequência da última escala.
+- Igor e Fabrício alternam as FOLGAS (não os dias trabalhados): numa semana um folga TER e QUI enquanto o outro folga SEG e QUA; na semana seguinte invertem (quem folgava ter/qui passa a folgar seg/qua e vice-versa). Continue a partir da última escala.
+
+== COZINHA — AUXILIARES ==
+Auxiliares: Márcia, Isabela, Adriana, Paulo, Paulo Novo.
+- Pelo menos 2 auxiliares por dia.
+- Paulo folga toda QUINTA e também no TERCEIRO DOMINGO do mês.
+- Paulo Novo, Isabela, Márcia e Adriana: no MÁXIMO 4 dias na semana.
+- Sem escala fixa: varie as folgas a cada semana.
+- Prioridade: Paulo Novo trabalha aos DOMINGOS.
+
+== COMO DESCOBRIR O DOMINGO DO MÊS ==
+Conte os domingos dentro do mês civil: 1º domingo = primeiro domingo do mês; 2º = segundo; 3º = terceiro. Aplique as folgas mensais (Yasmim 2º dom, Jorge 2º dom, Paulo 3º dom) conforme a data real de cada domingo da semana.
+
+== FORMATO OBRIGATÓRIO DA RESPOSTA (texto puro, em português) ==
+1) ESCALA POR DIA (Segunda a Domingo), cada dia assim:
+* Segunda:
+    Cozinha: <cozinheiros trabalhando> | Auxiliares: <auxiliares trabalhando>
+    Copa: <Yasmim ou "folga">
+    Garçons: <garçons trabalhando>
+(repita até Domingo)
+
+2) CONFERÊNCIA DE DIAS POR PESSOA (quantos dias cada um ficou):
+- Cozinheiros: Fabrício X, Igor X, Davisson X, Jorge X
+- Auxiliares: Márcia X, Isabela X, Adriana X, Paulo X, Paulo Novo X
+- Copa: Yasmim X
+- Garçons: Leonardo X, Gabriel X, Tiago X, Wellington X
+
+3) CONFLITOS ENCONTRADOS (liste cada um ou escreva "Nenhum conflito"):
+- Dia com menos de 2 cozinheiros
+- Dia com menos de 2 auxiliares
+- Yasmim de folga junto com Paulo
+- Alguém passando do limite de dias
+- Leonardo fora do dia-sim/dia-não
+- Sábado sem 3 garçons / Domingo sem 4 garçons
+
+NÃO gere PDF nem tabelas — apenas o texto acima, para conferência humana. Seja preciso e confira você mesmo as contagens antes de responder.`;
+
+app.post('/api/escala/gerar', mwAdmin, async (req, res) => {
+  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY não configurada. Adicione essa variável no serviço do Railway para usar a Escala IA.' });
+  const { semana_inicio, semana_fim, escala_anterior, observacoes } = req.body || {};
+  if (!semana_inicio || !semana_fim) return res.status(400).json({ error: 'Informe o início e o fim da semana.' });
+  const userMsg =
+    `Monte a escala da semana de ${semana_inicio} a ${semana_fim}.\n\n` +
+    (escala_anterior && escala_anterior.trim()
+      ? `ESCALA ANTERIOR (base para continuidade de folgas, alternâncias e dia-sim-dia-não):\n${escala_anterior.trim()}\n\n`
+      : `ATENÇÃO: a escala anterior NÃO foi enviada. Avise no começo que, sem ela, não dá para garantir a continuidade do dia-sim/dia-não do Leonardo, da alternância do Davisson e da inversão Igor/Fabrício. Faça a melhor suposição e marque com [VERIFICAR].\n\n`) +
+    (observacoes && observacoes.trim() ? `OBSERVAÇÕES DESTA SEMANA: ${observacoes.trim()}\n\n` : '') +
+    `Siga TODAS as regras e responda EXATAMENTE no formato pedido (escala por dia, conferência por pessoa, conflitos).`;
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, system: REGRAS_ESCALA, messages: [{ role: 'user', content: userMsg }] })
+    });
+    const data = await r.json();
+    if (!r.ok) return res.status(502).json({ error: 'Erro na IA: ' + (data?.error?.message || r.status) });
+    const texto = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+    try { await sb.from('ck_audit_log').insert({ action: 'escala_ia', detail: `Gerou escala ${semana_inicio} a ${semana_fim}`, user_name: req.query.user_name || 'admin', user_id: req.query.user_id || null, date: today(), time: nowTime() }); } catch (e) {}
+    res.json({ ok: true, texto });
+  } catch (e) {
+    res.status(503).json({ error: 'Falha ao contatar a IA: ' + e.message });
+  }
+});
+
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 seed().then(() => {

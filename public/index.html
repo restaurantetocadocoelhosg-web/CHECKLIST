@@ -297,6 +297,28 @@ Representante Legal: Nayara da Conceição Chaves — Administradora</p>
 <!-- CONTROL --><div class="page" id="pgControl"><div class="sec-title">🌡️ Controle</div><div class="sec-sub">Temperaturas, validades e ocorrências</div><div class="tabs" style="margin-bottom:10px"><button class="on" onclick="showCtrl('temp',this)">🌡️ Temp</button><button onclick="showCtrl('expiry',this)">📦 Validade</button><button onclick="showCtrl('occ',this)">📋 Ocorrência</button></div><div id="ctrlTemp"><button class="btn btn-blue btn-sm" style="width:100%;margin-bottom:8px" onclick="oModal('tempModal')">+ Temperatura</button><div id="tempList"></div></div><div id="ctrlExpiry" style="display:none"><button class="btn btn-g btn-sm" style="width:100%;margin-bottom:8px" onclick="openExpiryModal()">+ Insumo</button><div id="expiryList"></div></div><div id="ctrlOcc" style="display:none"><button class="btn btn-d btn-sm" style="width:100%;margin-bottom:8px" onclick="oModal('occModal')">+ Ocorrência</button><div id="occList"></div></div><div class="spacer"></div></div>
 <!-- TEAM --><div class="page" id="pgTeam"><div class="sec-title">👥 Equipe</div><div class="sec-sub">Presença e desempenho</div><div class="tabs" style="margin-bottom:10px"><button class="on" onclick="showTeam('presence',this)">Presença</button><button onclick="showTeam('ranking',this)">Ranking</button><button onclick="showTeam('shifts',this)">Escala</button><button onclick="showTeam('activity',this)">Atividade</button></div><div id="teamPresence"></div><div id="teamRanking" style="display:none"></div><div id="teamShifts" style="display:none"></div><div id="teamActivity" style="display:none"></div><div class="spacer"></div></div>
 <!-- REPORT --><div class="page" id="pgReport"><div class="sec-title">📊 Relatórios</div><div class="tabs" style="margin-bottom:10px"><button class="on" onclick="loadReport(7,this)">7d</button><button onclick="loadReport(15,this)">15d</button><button onclick="loadReport(30,this)">30d</button></div><button class="btn btn-blue btn-sm" style="width:100%;margin-bottom:8px" onclick="exportPDF()">📄 PDF de Hoje</button><div id="reportList"></div><div class="spacer"></div></div>
+<!-- ESCALA IA (admin) --><div class="page" id="pgEscala"><div class="sec-title">🗓️ Escala IA</div>
+<div style="font-size:11px;color:var(--text2);margin:0 4px 10px">Monta a escala da semana seguindo as regras do restaurante. Gera primeiro em TEXTO para você conferir e corrigir; o PDF é só depois da sua aprovação.</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:var(--card,#fff);border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+<div style="display:flex;gap:8px">
+<label style="flex:1;font-size:11px;color:var(--text2)">Início (segunda)<input type="date" id="escIni" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px"></label>
+<label style="flex:1;font-size:11px;color:var(--text2)">Fim (domingo)<input type="date" id="escFim" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px"></label>
+</div>
+<label style="font-size:11px;color:var(--text2)">Escala anterior (cole o texto da última escala — base para folgas e alternâncias)<textarea id="escAnterior" rows="6" placeholder="Cole aqui a escala da semana passada..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px"></textarea></label>
+<label style="font-size:11px;color:var(--text2)">Observações desta semana (opcional)<input id="escObs" placeholder="Ex.: Tiago de atestado na quarta" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px"></label>
+<button id="escBtn" onclick="gerarEscala()" style="padding:12px;background:#C8553D;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🤖 Gerar escala (texto)</button>
+</div>
+<div id="escResultWrap" style="display:none;margin-top:12px">
+<div class="sec-title">Escala gerada — confira e ajuste</div>
+<textarea id="escResult" rows="22" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:12px;font-family:monospace;white-space:pre-wrap"></textarea>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button onclick="gerarEscala()" style="flex:1;padding:11px;background:#eee;color:#333;border:none;border-radius:10px;cursor:pointer">↻ Gerar de novo</button>
+<button onclick="escalaPDF()" style="flex:1;padding:11px;background:#2B7A9E;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">✅ Aprovar e gerar PDF</button>
+</div>
+</div>
+<div class="spacer"></div>
+</div>
+
 <!-- ADMIN --><div class="page" id="pgAdmin"><div class="sec-title">⚙️ Admin</div>
 <div class="adm-sec"><h3>📢 Mural de Avisos</h3><div id="bulletinList"></div><button class="btn btn-blue btn-sm" style="width:100%;margin-top:4px" onclick="oModal('bullModal')">+ Novo Aviso</button></div>
 <div class="adm-sec"><h3>🏆 Ranking</h3><div class="toggle-wrap"><span>Visível pra equipe</span><div class="toggle" id="rankToggle" onclick="toggleRanking()"></div></div></div>
@@ -315,6 +337,7 @@ Representante Legal: Nayara da Conceição Chaves — Administradora</p>
 <button onclick="goPage('pgReport',this);loadReport(7)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></svg>Relatório</button>
 <button id="navAgentes" onclick="goPage('pgAgentes',this);loadAgents()" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><circle cx="19" cy="7" r="2"/><path d="M19 13v2m0 4v.01"/></svg>Agentes</button>
 <button id="navAdmin" onclick="goPage('pgAdmin',this);loadAdmin()" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>Admin</button>
+<button id="navEscala" onclick="goPage('pgEscala',this)" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Escala</button>
 </nav>
 </div>
 <!-- PANELS -->
@@ -387,7 +410,7 @@ async function checkTermsAndShow(){try{const data=await supaGet('terms_acceptanc
 function showTerms(){document.getElementById('loginScreen').style.display='none';document.getElementById('termsOverlay').classList.add('on');document.getElementById('termsCheckbox').checked=false;document.getElementById('btnAcceptTerms').className='btn-accept';document.getElementById('termsBody').scrollTop=0}
 async function acceptTerms(){if(!document.getElementById('termsCheckbox').checked)return;try{await supaPost('terms_acceptance',{user_name:user.name,app_name:APP_NAME,terms_version:TERMS_VERSION,accepted_at:new Date().toISOString(),ip_address:null,user_agent:navigator.userAgent});user.termsAccepted=true;localStorage.setItem('toca_user',JSON.stringify(user));document.getElementById('termsOverlay').classList.remove('on');toast('Termo aceito com sucesso!');showApp()}catch(e){toast('Erro ao registrar aceite',true)}}
 function declineTerms(){document.getElementById('termsOverlay').classList.remove('on');doLogout();toast('Você precisa aceitar o termo para usar o sistema',true)}
-function showApp(){document.getElementById('loginScreen').style.display='none';document.getElementById('app').classList.add('on');document.getElementById('userBadge').textContent=user.name;document.getElementById('navAdmin').style.display=isAdmin()?'':'none';document.getElementById('navAgentes').style.display=isAdmin()?'':'none';document.getElementById('alertBtn').style.display=isAdmin()?'':'none';if(isAdmin())checkAlerts();setDate();loadDashboard()}
+function showApp(){document.getElementById('loginScreen').style.display='none';document.getElementById('app').classList.add('on');document.getElementById('userBadge').textContent=user.name;document.getElementById('navAdmin').style.display=isAdmin()?'':'none';document.getElementById('navAgentes').style.display=isAdmin()?'':'none';document.getElementById('navEscala').style.display=(user.role==='admin')?'':'none';document.getElementById('alertBtn').style.display=isAdmin()?'':'none';if(isAdmin())checkAlerts();setDate();loadDashboard()}
 function goPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on')}
 function setDate(){const d=new Date(),dias=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'],meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];document.getElementById('dayLbl').textContent=dias[d.getDay()];document.getElementById('dateLbl').textContent=d.getDate()+' de '+meses[d.getMonth()]}
 function setTab(t,btn){tab=t;document.querySelectorAll('#tabBar button').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');loadChecklist()}
@@ -488,6 +511,28 @@ async function delTask(id){if(!confirm('Remover?'))return;await API('/api/tasks/
 async function resetDay(){if(!confirm('Resetar?'))return;await API('/api/reset-day',{method:'POST'});toast('Resetado!');loadChecklist();loadDashboard()}
 tryAuto();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js');
+
+// ===== ESCALA IA (admin) =====
+async function gerarEscala(){
+  var ini=document.getElementById('escIni').value,fim=document.getElementById('escFim').value;
+  if(!ini||!fim){toast('Informe início e fim da semana',true);return}
+  var btn=document.getElementById('escBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='🤖 Gerando... (~20s)';
+  try{
+    var d=await API('/api/escala/gerar',{method:'POST',body:JSON.stringify({semana_inicio:ini,semana_fim:fim,escala_anterior:document.getElementById('escAnterior').value,observacoes:document.getElementById('escObs').value})});
+    if(d&&d.texto){document.getElementById('escResult').value=d.texto;document.getElementById('escResultWrap').style.display='block';document.getElementById('escResultWrap').scrollIntoView({behavior:'smooth'});}
+    else{toast((d&&d.error)||'Erro ao gerar',true)}
+  }catch(e){toast('Falha: '+e.message,true)}
+  btn.disabled=false;btn.textContent=old;
+}
+function escalaPDF(){
+  var txt=document.getElementById('escResult').value||'';
+  var ini=document.getElementById('escIni').value,fim=document.getElementById('escFim').value;
+  var safe=txt.replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]});
+  var w=window.open('','_blank');
+  if(!w){toast('Permita pop-ups para gerar o PDF',true);return}
+  w.document.write('<html><head><meta charset="utf-8"><title>Escala '+ini+' a '+fim+'</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:30px;color:#222}h1{color:#C8553D;font-size:20px;margin:0 0 2px}.sub{color:#666;font-size:12px;margin-bottom:18px}pre{white-space:pre-wrap;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55}@media print{.noprint{display:none}}</style></head><body><h1>🐰 Toca do Coelho — Escala</h1><div class="sub">Semana de '+ini+' a '+fim+'</div><pre>'+safe+'</pre><button class="noprint" onclick="window.print()" style="margin-top:18px;padding:10px 20px;background:#C8553D;color:#fff;border:none;border-radius:8px;cursor:pointer">Imprimir / Salvar como PDF</button></body></html>');
+  w.document.close();
+}
 
 // ===== AGENTS =====
 async function loadAgents(){
