@@ -400,7 +400,7 @@ const occ=await API('/api/occurrences?days=30');const open=occ.filter(o=>!o.reso
 document.getElementById('dashOcc').innerHTML=open.length?open.map(o=>`<div class="occ-card${o.priority==='urgente'?' urgent':''}"><div class="occ-text">${o.text}</div><div class="occ-meta">${o.created_by} · ${o.created_at}</div></div>`).join(''):'<div class="card" style="text-align:center;color:var(--text2);font-size:9px">Nenhuma</div>'}
 
 // THROTTLE
-function startThrottle(){throttleUntil=Date.now()+5*60*1000;document.getElementById('throttleBanner').style.display='block';if(throttleInterval)clearInterval(throttleInterval);throttleInterval=setInterval(()=>{const l=Math.max(0,throttleUntil-Date.now());if(l<=0){document.getElementById('throttleBanner').style.display='none';clearInterval(throttleInterval);return}document.getElementById('throttleTime').textContent=Math.floor(l/60000)+':'+(Math.floor((l%60000)/1000)+'').padStart(2,'0')},1000)}
+function startThrottle(){throttleUntil=Date.now()+60*1000;document.getElementById('throttleBanner').style.display='block';if(throttleInterval)clearInterval(throttleInterval);throttleInterval=setInterval(()=>{const l=Math.max(0,throttleUntil-Date.now());if(l<=0){document.getElementById('throttleBanner').style.display='none';clearInterval(throttleInterval);return}document.getElementById('throttleTime').textContent=Math.floor(l/60000)+':'+(Math.floor((l%60000)/1000)+'').padStart(2,'0')},1000)}
 
 // CHECKLIST
 async function loadChecklist(){sectors=await API('/api/checklist/'+tab);renderChecklist()}

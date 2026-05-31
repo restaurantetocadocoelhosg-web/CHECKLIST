@@ -5,6 +5,10 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Anti-fraude: nº MÁXIMO de tarefas que um OPERADOR pode marcar por minuto.
+// (admin e gerente são ISENTOS). 1 = exige ~1 minuto entre cada check.
+const MAX_CHECKS_POR_MINUTO = 1;
+
 const SUPA_URL = process.env.SUPABASE_URL;
 const SUPA_KEY = process.env.SUPABASE_KEY;
 if (!SUPA_URL || !SUPA_KEY) {
@@ -145,7 +149,7 @@ app.post('/api/toggle', async (req, res) => {
   const oneMinAgo = new Date(Date.now() - 60 * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
   const { data: recent } = await sb.from('ck_checklist_entries').select('id,done_at').eq('done_by_id', user_id).eq('date', date).eq('done', 1).gte('done_at', oneMinAgo).order('done_at', { ascending: false });
   const recentCount = (recent || []).length;
-  if (recentCount >= 2) {
+  if (recentCount >= MAX_CHECKS_POR_MINUTO) {
     await sb.from('ck_admin_alerts').insert({ type: 'throttle', message: `${user_name} tentou marcar durante bloqueio`, user_name, user_id, date: today(), time: nowTime() });
     let retryAfterSeconds = 60;
     if (recent?.[recent.length - 1]?.done_at) {
@@ -160,7 +164,7 @@ app.post('/api/toggle', async (req, res) => {
   }
   await sb.rpc('ck_upsert_checklist_entry', { p_task_id: task_id, p_date: date, p_tab: tab, p_done: 1, p_done_by: user_name, p_done_by_id: user_id, p_done_at: nowTime() });
   await sb.from('ck_audit_log').insert({ action: 'check', detail: `Marcou: "${taskInfo?.text}"`, user_name, user_id, date: today(), time: nowTime() });
-  res.json({ ok: true, remaining: 1 - recentCount });
+  res.json({ ok: true, remaining: MAX_CHECKS_POR_MINUTO - 1 - recentCount });
 });
 
 app.post('/api/observation', async (req, res) => {
