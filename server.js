@@ -60,6 +60,7 @@ async function requireAdminQ(req, res) {
 }
 const mwManager = (req, res, next) => requireManager(req, res).then(u => { if (u) next(); }).catch(() => res.status(500).json({ error: 'erro auth' }));
 const mwAdmin = (req, res, next) => requireAdminQ(req, res).then(u => { if (u) next(); }).catch(() => res.status(500).json({ error: 'erro auth' }));
+const mwUser = (req, res, next) => requireUser(req, res).then(u => { if (u) next(); }).catch(() => res.status(500).json({ error: 'erro auth' }));
 
 // ===================== SEED =====================
 let _seedDone = false;
@@ -357,7 +358,7 @@ app.get('/api/reports/:date/:tab', async (req, res) => {
 app.get('/api/export/pdf', (req, res) => { res.redirect(`/api/reports/${req.query.date || today()}/abertura`); });
 
 // ===================== ADMIN =====================
-app.get('/api/users', mwManager, async (req, res) => { const { data } = await sb.from('ck_users').select('id,username,name,role,sector,active').order('name'); res.json(data || []); });
+app.get('/api/users', mwUser, async (req, res) => { const { data } = await sb.from('ck_users').select('id,username,name,role,sector,active').order('name'); res.json(data || []); });
 app.post('/api/users', mwManager, async (req, res) => { const hash = bcrypt.hashSync(req.body.password, 10); const { error } = await sb.from('ck_users').insert({ username: req.body.username.toLowerCase(), password: hash, name: req.body.name, role: req.body.role || 'operador', sector: req.body.sector || null }); if (error) return res.status(400).json({ error: 'Usuário já existe' }); res.json({ ok: true }); });
 app.put('/api/users/:id', mwManager, async (req, res) => { const updates = {}; ['name', 'role', 'sector', 'active'].forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; }); if (req.body.password) updates.password = bcrypt.hashSync(req.body.password, 10); if (!Object.keys(updates).length) return res.status(400).json({ error: 'Nada' }); await sb.from('ck_users').update(updates).eq('id', req.params.id); res.json({ ok: true }); });
 app.delete('/api/users/:id', mwAdmin, async (req, res) => { await sb.from('ck_users').delete().eq('id', req.params.id); res.json({ ok: true }); });
@@ -541,6 +542,18 @@ app.post('/api/escala/gerar', mwAdmin, async (req, res) => {
   } catch (e) {
     res.status(503).json({ error: 'Falha ao contatar a IA: ' + e.message });
   }
+});
+
+// Publica a escala gerada no "quadro da Equipe" (visível a todos os logados)
+app.post('/api/escala/publicar', mwAdmin, async (req, res) => {
+  const { dados } = req.body || {};
+  if (!dados || !Array.isArray(dados.dias)) return res.status(400).json({ error: 'Escala inválida.' });
+  await sb.from('ck_escala').insert({ semana: dados.semana || null, dados, publicado_por: req.query.user_name || 'admin' });
+  res.json({ ok: true });
+});
+app.get('/api/escala/atual', mwUser, async (req, res) => {
+  const { data } = await sb.from('ck_escala').select('dados,semana,publicado_em,publicado_por').order('publicado_em', { ascending: false }).limit(1).maybeSingle();
+  res.json(data || null);
 });
 
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
