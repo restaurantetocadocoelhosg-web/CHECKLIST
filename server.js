@@ -485,29 +485,27 @@ Auxiliares: Márcia, Isabela, Adriana, Paulo, Paulo Novo.
 == COMO DESCOBRIR O DOMINGO DO MÊS ==
 Conte os domingos dentro do mês civil: 1º domingo = primeiro domingo do mês; 2º = segundo; 3º = terceiro. Aplique as folgas mensais (Yasmim 2º dom, Jorge 2º dom, Paulo 3º dom) conforme a data real de cada domingo da semana.
 
-== FORMATO OBRIGATÓRIO DA RESPOSTA (texto puro, em português) ==
-1) ESCALA POR DIA (Segunda a Domingo), cada dia assim:
-* Segunda:
-    Cozinha: <cozinheiros trabalhando> | Auxiliares: <auxiliares trabalhando>
-    Copa: <Yasmim ou "folga">
-    Garçons: <garçons trabalhando>
-(repita até Domingo)
+== PAPÉIS NO QUADRO (como distribuir cada pessoa no dia) ==
+- "cozinha": cozinheiros + auxiliares que trabalham no dia. NÃO inclua aqui quem está em limpeza nem na copa.
+- "limpeza": Paulo Novo quando trabalha (senão null).
+- "copa": Yasmim normalmente; Paulo quando a Yasmim folga (senão null).
+- "garcons": garçons que trabalham no dia.
 
-2) CONFERÊNCIA DE DIAS POR PESSOA (quantos dias cada um ficou):
-- Cozinheiros: Fabrício X, Igor X, Davisson X, Jorge X
-- Auxiliares: Márcia X, Isabela X, Adriana X, Paulo X, Paulo Novo X
-- Copa: Yasmim X
-- Garçons: Leonardo X, Gabriel X, Tiago X, Wellington X
-
-3) CONFLITOS ENCONTRADOS (liste cada um ou escreva "Nenhum conflito"):
-- Dia com menos de 2 cozinheiros
-- Dia com menos de 2 auxiliares
-- Yasmim de folga junto com Paulo
-- Alguém passando do limite de dias
-- Leonardo fora do dia-sim/dia-não
-- Sábado sem 3 garçons / Domingo sem 4 garçons
-
-NÃO gere PDF nem tabelas — apenas o texto acima, para conferência humana. Seja preciso e confira você mesmo as contagens antes de responder.`;
+== SAÍDA — responda SOMENTE um JSON válido (sem crases, sem nada fora do JSON) ==
+{
+  "semana": "DD/MM a DD/MM/AAAA",
+  "dias": [
+    {"data":"DD/MM","dia":"Segunda","cozinha":["Nome"],"limpeza":"Nome ou null","copa":"Nome ou null","garcons":["Nome"]}
+  ],
+  "conferencia": {
+    "cozinheiros":[{"nome":"Fabrício","dias":0}],
+    "auxiliares":[{"nome":"Paulo","dias":0}],
+    "copa":[{"nome":"Yasmim","dias":0}],
+    "garcons":[{"nome":"Leonardo","dias":0}]
+  },
+  "conflitos": ["descreva cada conflito; use [] se nenhum"]
+}
+O array "dias" deve ter EXATAMENTE 7 itens, de Segunda a Domingo. Confira você mesmo as contagens e todas as regras antes de responder. Responda só o JSON.`;
 
 app.post('/api/escala/gerar', mwAdmin, async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY não configurada. Adicione essa variável no serviço do Railway para usar a Escala IA.' });
@@ -528,9 +526,18 @@ app.post('/api/escala/gerar', mwAdmin, async (req, res) => {
     });
     const data = await r.json();
     if (!r.ok) return res.status(502).json({ error: 'Erro na IA: ' + (data?.error?.message || r.status) });
-    const texto = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+    let texto = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+    // Extrai o JSON da resposta (remove cercas ``` se houver)
+    let dados = null;
+    try {
+      let js = texto.replace(/^```(json)?/i, '').replace(/```$/, '').trim();
+      const a = js.indexOf('{'), b = js.lastIndexOf('}');
+      if (a >= 0 && b > a) js = js.slice(a, b + 1);
+      dados = JSON.parse(js);
+    } catch (e) { dados = null; }
+    if (!dados || !Array.isArray(dados.dias)) return res.status(502).json({ error: 'A IA não devolveu a escala no formato esperado. Tente "Gerar de novo".' });
     try { await sb.from('ck_audit_log').insert({ action: 'escala_ia', detail: `Gerou escala ${semana_inicio} a ${semana_fim}`, user_name: req.query.user_name || 'admin', user_id: req.query.user_id || null, date: today(), time: nowTime() }); } catch (e) {}
-    res.json({ ok: true, texto });
+    res.json({ ok: true, dados });
   } catch (e) {
     res.status(503).json({ error: 'Falha ao contatar a IA: ' + e.message });
   }

@@ -306,14 +306,17 @@ Representante Legal: Nayara da Conceição Chaves — Administradora</p>
 </div>
 <label style="font-size:11px;color:var(--text2)">Escala anterior (cole o texto da última escala — base para folgas e alternâncias)<textarea id="escAnterior" rows="6" placeholder="Cole aqui a escala da semana passada..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px"></textarea></label>
 <label style="font-size:11px;color:var(--text2)">Observações desta semana (opcional)<input id="escObs" placeholder="Ex.: Tiago de atestado na quarta" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px"></label>
-<button id="escBtn" onclick="gerarEscala()" style="padding:12px;background:#C8553D;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🤖 Gerar escala (texto)</button>
+<button id="escBtn" onclick="gerarEscala()" style="padding:12px;background:#C8553D;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🤖 Gerar escala</button>
 </div>
 <div id="escResultWrap" style="display:none;margin-top:12px">
-<div class="sec-title">Escala gerada — confira e ajuste</div>
-<textarea id="escResult" rows="22" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:12px;font-family:monospace;white-space:pre-wrap"></textarea>
-<div style="display:flex;gap:8px;margin-top:8px">
-<button onclick="gerarEscala()" style="flex:1;padding:11px;background:#eee;color:#333;border:none;border-radius:10px;cursor:pointer">↻ Gerar de novo</button>
-<button onclick="escalaPDF()" style="flex:1;padding:11px;background:#2B7A9E;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">✅ Aprovar e gerar PDF</button>
+<div class="sec-title">Escala gerada — confira</div>
+<div id="escGrid" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
+<div id="escConfer" style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.5"></div>
+<div id="escConflitos" style="margin-top:8px"></div>
+<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+<button onclick="gerarEscala()" style="flex:1;min-width:110px;padding:11px;background:#eee;color:#333;border:none;border-radius:10px;cursor:pointer">↻ Gerar de novo</button>
+<button onclick="escalaWhatsApp()" style="flex:1;min-width:110px;padding:11px;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🟢 WhatsApp</button>
+<button onclick="escalaPDF()" style="flex:1;min-width:110px;padding:11px;background:#2B7A9E;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">📄 PDF</button>
 </div>
 </div>
 <div class="spacer"></div>
@@ -513,24 +516,72 @@ tryAuto();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js');
 
 // ===== ESCALA IA (admin) =====
+var escalaDados=null;
+function escEsc(s){return String(s==null?'':s).replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]})}
+function renderEscalaGrid(d){
+  var dias=d.dias||[];
+  var th=dias.map(function(x){return '<th style="background:#dbe7f3;border:1px solid #9bb8d4;padding:6px 8px;font-size:12px;text-align:center;white-space:nowrap;color:#1a3a5c">'+escEsc(x.data)+'<br>'+escEsc(x.dia)+'</th>'}).join('');
+  var td=dias.map(function(x){
+    var coz=(x.cozinha||[]).map(function(n){return '• '+escEsc(n)}).join('<br>')||'—';
+    var extra='';
+    if(x.limpeza)extra+='<div style="margin-top:8px">• '+escEsc(x.limpeza)+' <i>(Limpeza)</i></div>';
+    if(x.copa)extra+='<div style="margin-top:8px">• '+escEsc(x.copa)+' <i>(Copa)</i></div>';
+    var gar=(x.garcons||[]).map(function(n){return '• '+escEsc(n)}).join('<br>')||'—';
+    return '<td style="border:1px solid #9bb8d4;padding:8px;vertical-align:top;font-size:12px;min-width:118px">'+
+      '<div style="font-weight:800;margin-bottom:4px">COZINHA</div>'+coz+extra+
+      '<div style="font-weight:800;margin:10px 0 4px">SALÃO/GARÇONS</div>'+gar+'</td>'
+  }).join('');
+  return '<table style="border-collapse:collapse;width:100%"><thead><tr>'+th+'</tr></thead><tbody><tr>'+td+'</tr></tbody></table>';
+}
+function renderEscalaConfer(d){
+  var c=d.conferencia||{};
+  function grp(t,arr){return arr&&arr.length?('<b>'+t+':</b> '+arr.map(function(x){return escEsc(x.nome)+' '+x.dias}).join(' · ')):''}
+  return [grp('Cozinheiros',c.cozinheiros),grp('Auxiliares',c.auxiliares),grp('Copa',c.copa),grp('Garçons',c.garcons)].filter(Boolean).join('<br>');
+}
+function escalaTexto(d){
+  var L=['🐰 *Restaurante Toca do Coelho*','*ESCALA SEMANAL* — '+(d.semana||''),''];
+  (d.dias||[]).forEach(function(x){
+    L.push('*'+String(x.dia||'').toUpperCase()+' '+(x.data||'')+'*');
+    L.push('Cozinha: '+((x.cozinha||[]).join(', ')||'—'));
+    if(x.limpeza)L.push('Limpeza: '+x.limpeza);
+    L.push('Copa: '+(x.copa||'—'));
+    L.push('Salão/Garçons: '+((x.garcons||[]).join(', ')||'—'));
+    L.push('');
+  });
+  return L.join('\n');
+}
 async function gerarEscala(){
   var ini=document.getElementById('escIni').value,fim=document.getElementById('escFim').value;
   if(!ini||!fim){toast('Informe início e fim da semana',true);return}
   var btn=document.getElementById('escBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='🤖 Gerando... (~20s)';
   try{
     var d=await API('/api/escala/gerar',{method:'POST',body:JSON.stringify({semana_inicio:ini,semana_fim:fim,escala_anterior:document.getElementById('escAnterior').value,observacoes:document.getElementById('escObs').value})});
-    if(d&&d.texto){document.getElementById('escResult').value=d.texto;document.getElementById('escResultWrap').style.display='block';document.getElementById('escResultWrap').scrollIntoView({behavior:'smooth'});}
-    else{toast((d&&d.error)||'Erro ao gerar',true)}
+    if(d&&d.dados){
+      escalaDados=d.dados;
+      document.getElementById('escGrid').innerHTML=renderEscalaGrid(escalaDados);
+      document.getElementById('escConfer').innerHTML=renderEscalaConfer(escalaDados);
+      var cf=(escalaDados.conflitos||[]).filter(Boolean);
+      document.getElementById('escConflitos').innerHTML=cf.length?('<div style="background:#fff4e5;border:1px solid #f0c98a;border-radius:8px;padding:8px;font-size:11px"><b>⚠️ Conflitos:</b><br>'+cf.map(escEsc).join('<br>')+'</div>'):'<div style="color:#2e7d32;font-size:11px">✅ Sem conflitos</div>';
+      document.getElementById('escResultWrap').style.display='block';
+      document.getElementById('escResultWrap').scrollIntoView({behavior:'smooth'});
+    } else {toast((d&&d.error)||'Erro ao gerar',true)}
   }catch(e){toast('Falha: '+e.message,true)}
   btn.disabled=false;btn.textContent=old;
 }
+function escalaWhatsApp(){
+  if(!escalaDados){toast('Gere a escala primeiro',true);return}
+  window.open('https://wa.me/?text='+encodeURIComponent(escalaTexto(escalaDados)),'_blank');
+}
 function escalaPDF(){
-  var txt=document.getElementById('escResult').value||'';
-  var ini=document.getElementById('escIni').value,fim=document.getElementById('escFim').value;
-  var safe=txt.replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]});
+  if(!escalaDados){toast('Gere a escala primeiro',true);return}
   var w=window.open('','_blank');
   if(!w){toast('Permita pop-ups para gerar o PDF',true);return}
-  w.document.write('<html><head><meta charset="utf-8"><title>Escala '+ini+' a '+fim+'</title><style>body{font-family:Arial,Helvetica,sans-serif;padding:30px;color:#222}h1{color:#C8553D;font-size:20px;margin:0 0 2px}.sub{color:#666;font-size:12px;margin-bottom:18px}pre{white-space:pre-wrap;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55}@media print{.noprint{display:none}}</style></head><body><h1>🐰 Toca do Coelho — Escala</h1><div class="sub">Semana de '+ini+' a '+fim+'</div><pre>'+safe+'</pre><button class="noprint" onclick="window.print()" style="margin-top:18px;padding:10px 20px;background:#C8553D;color:#fff;border:none;border-radius:8px;cursor:pointer">Imprimir / Salvar como PDF</button></body></html>');
+  w.document.write('<html><head><meta charset="utf-8"><title>Escala '+escEsc(escalaDados.semana||'')+'</title><style>@page{size:A4 landscape;margin:10mm}body{font-family:Arial,Helvetica,sans-serif;color:#222;margin:0;padding:16px}h1{text-align:center;font-size:16px;margin:0}h2{text-align:center;font-size:12px;margin:2px 0 14px}.ft{margin-top:14px;text-align:center;color:#666;font-size:10px}@media print{.noprint{display:none}}</style></head><body>'+
+    '<h1>Restaurante Toca do Coelho</h1><h2>ESCALA SEMANAL — COZINHA E SALÃO/GARÇONS | '+escEsc(String(escalaDados.semana||"").toUpperCase())+'</h2>'+
+    renderEscalaGrid(escalaDados)+
+    '<div class="ft">Uso interno | Cozinha = produção/cozinha | Salão/Garçons = atendimento/salão</div>'+
+    '<button class="noprint" onclick="window.print()" style="margin-top:16px;padding:10px 20px;background:#C8553D;color:#fff;border:none;border-radius:8px;cursor:pointer">Imprimir / Salvar como PDF</button>'+
+    '</body></html>');
   w.document.close();
 }
 
