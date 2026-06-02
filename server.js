@@ -508,17 +508,39 @@ Conte os domingos dentro do mês civil: 1º domingo = primeiro domingo do mês; 
 }
 O array "dias" deve ter EXATAMENTE 7 itens, de Segunda a Domingo. Confira você mesmo as contagens e todas as regras antes de responder. Responda só o JSON.`;
 
+// Converte a escala estruturada (dados) em texto legível p/ servir de base à IA
+function escalaParaTexto(d) {
+  if (!d || !Array.isArray(d.dias)) return '';
+  const linhas = [d.semana ? `Semana ${d.semana}` : ''];
+  for (const x of d.dias) {
+    const p = [`${x.dia} ${x.data}`, `Cozinha: ${(x.cozinha || []).join(', ') || '—'}`];
+    if (x.limpeza) p.push(`Limpeza: ${x.limpeza}`);
+    p.push(`Copa: ${x.copa || '—'}`);
+    p.push(`Garçons: ${(x.garcons || []).join(', ') || '—'}`);
+    linhas.push(p.join(' | '));
+  }
+  return linhas.filter(Boolean).join('\n');
+}
+
 app.post('/api/escala/gerar', mwAdmin, async (req, res) => {
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY não configurada. Adicione essa variável no serviço do Railway para usar a Escala IA.' });
-  const { semana_inicio, semana_fim, escala_anterior, observacoes } = req.body || {};
+  const { semana_inicio, semana_fim, observacoes } = req.body || {};
   if (!semana_inicio || !semana_fim) return res.status(400).json({ error: 'Informe o início e o fim da semana.' });
+  // Base = última escala PUBLICADA (automática). Aceita escala_anterior no corpo como override.
+  let baseTexto = ((req.body && req.body.escala_anterior) || '').trim();
+  if (!baseTexto) {
+    try {
+      const { data: ult } = await sb.from('ck_escala').select('dados').order('publicado_em', { ascending: false }).limit(1).maybeSingle();
+      if (ult && ult.dados) baseTexto = escalaParaTexto(ult.dados);
+    } catch (e) {}
+  }
   const userMsg =
     `Monte a escala da semana de ${semana_inicio} a ${semana_fim}.\n\n` +
-    (escala_anterior && escala_anterior.trim()
-      ? `ESCALA ANTERIOR (base para continuidade de folgas, alternâncias e dia-sim-dia-não):\n${escala_anterior.trim()}\n\n`
-      : `ATENÇÃO: a escala anterior NÃO foi enviada. Avise no começo que, sem ela, não dá para garantir a continuidade do dia-sim/dia-não do Leonardo, da alternância do Davisson e da inversão Igor/Fabrício. Faça a melhor suposição e marque com [VERIFICAR].\n\n`) +
+    (baseTexto
+      ? `ESCALA ANTERIOR (base para continuidade de folgas, alternâncias e dia-sim-dia-não):\n${baseTexto}\n\n`
+      : `ATENÇÃO: não há escala anterior registrada. Faça a melhor suposição e marque com [VERIFICAR].\n\n`) +
     (observacoes && observacoes.trim() ? `OBSERVAÇÕES DESTA SEMANA: ${observacoes.trim()}\n\n` : '') +
-    `Siga TODAS as regras e responda EXATAMENTE no formato pedido (escala por dia, conferência por pessoa, conflitos).`;
+    `Siga TODAS as regras e responda EXATAMENTE no formato pedido (JSON).`;
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
