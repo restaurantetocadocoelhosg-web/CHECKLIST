@@ -469,19 +469,18 @@ Garçons: Leonardo, Gabriel, Tiago, Wellington.
 - Quando Yasmim estiver de folga, Paulo (auxiliar) NÃO pode estar de folga (ele cobre a Copa).
 
 == COZINHA — COZINHEIROS ==
-Cozinheiros: Fabrício, Igor, Davisson, Jorge.
-- NUNCA menos de 2 cozinheiros por dia.
-- Jorge folga toda QUARTA e também no SEGUNDO DOMINGO do mês.
-- Davisson alterna por semana: numa semana folga SEG e SEX; na outra folga TER e SÁB. Continue a sequência da última escala.
-- Igor e Fabrício alternam as FOLGAS (não os dias trabalhados): numa semana um folga TER e QUI enquanto o outro folga SEG e QUA; na semana seguinte invertem (quem folgava ter/qui passa a folgar seg/qua e vice-versa). Continue a partir da última escala.
+Cozinheiros em RODÍZIO: Davisson, Fabrício, Igor.  Cozinheiro FIXO: Jorge.
+- Segunda a sexta: 2 cozinheiros por dia, INTERCALANDO Davisson, Fabrício e Igor (reveze quem trabalha e quem folga, de forma justa, com base na escala anterior).
+- Davisson, Fabrício e Igor: NO MÁXIMO 5 dias por semana CADA. NUNCA 6 dias para nenhum deles.
+- Jorge é o ÚNICO cozinheiro 6x1: folga fixa toda QUARTA e também no 2º DOMINGO do mês. Pode trabalhar 6 dias.
+- Nunca menos de 2 cozinheiros em nenhum dia. Sábado e domingo podem ter mais de 2 (são mais movimentados).
 
 == COZINHA — AUXILIARES ==
-Auxiliares: Márcia, Isabela, Adriana, Paulo, Paulo Novo.
-- Pelo menos 2 auxiliares por dia.
-- Paulo folga toda QUINTA e também no TERCEIRO DOMINGO do mês.
-- Paulo Novo, Isabela, Márcia e Adriana: no MÁXIMO 4 dias na semana.
-- Sem escala fixa: varie as folgas a cada semana.
-- Prioridade: Paulo Novo trabalha aos DOMINGOS.
+Auxiliares: Paulo, Adriana, Márcia, Paulo Novo.
+- Paulo é INTEGRAL, 6x1: folga fixa toda QUINTA e também no 3º DOMINGO do mês. Pode trabalhar 6 dias.
+- Adriana, Márcia e Paulo Novo: NO MÁXIMO 4 dias por semana CADA, em rodízio (sem folga fixa — varie as folgas toda semana).
+- Prioridade: Paulo Novo trabalha aos DOMINGOS (geralmente fica na Limpeza).
+- Nunca menos de 2 auxiliares por dia. Quando a Yasmim folga, o Paulo NÃO pode folgar (ele cobre a Copa).
 
 == COMO DESCOBRIR O DOMINGO DO MÊS ==
 Conte os domingos dentro do mês civil: 1º domingo = primeiro domingo do mês; 2º = segundo; 3º = terceiro. Aplique as folgas mensais (Yasmim 2º dom, Jorge 2º dom, Paulo 3º dom) conforme a data real de cada domingo da semana.
@@ -506,7 +505,8 @@ Conte os domingos dentro do mês civil: 1º domingo = primeiro domingo do mês; 
   },
   "conflitos": ["descreva cada conflito; use [] se nenhum"]
 }
-O array "dias" deve ter EXATAMENTE 7 itens, de Segunda a Domingo. Confira você mesmo as contagens e todas as regras antes de responder. Responda só o JSON.`;
+O array "dias" deve ter EXATAMENTE 7 itens, de Segunda a Domingo.
+ANTES de responder, VALIDE e CORRIJA: (a) só Jorge (cozinha) e Paulo (auxiliar) podem ter 6 dias; (b) Davisson, Fabrício e Igor no MÁXIMO 5 dias cada; (c) Adriana, Márcia e Paulo Novo no MÁXIMO 4 dias cada; (d) todo dia com pelo menos 2 cozinheiros e 2 auxiliares. Se algo violar, REFAÇA a distribuição antes de responder. Confira você mesmo as contagens. Responda só o JSON.`;
 
 // Converte a escala estruturada (dados) em texto legível p/ servir de base à IA
 function escalaParaTexto(d) {
