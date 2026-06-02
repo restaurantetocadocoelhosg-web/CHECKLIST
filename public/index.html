@@ -316,6 +316,7 @@ Representante Legal: Nayara da Conceição Chaves — Administradora</p>
 <div id="escConflitos" style="margin-top:8px"></div>
 <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
 <button onclick="gerarEscala()" style="flex:1;min-width:110px;padding:11px;background:#eee;color:#333;border:none;border-radius:10px;cursor:pointer">↻ Gerar de novo</button>
+<button id="escEditBtn" onclick="escToggleEdit()" style="flex:1;min-width:110px;padding:11px;background:#6b4e8e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">✏️ Editar</button>
 <button onclick="escalaWhatsApp()" style="flex:1;min-width:110px;padding:11px;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">🟢 WhatsApp</button>
 <button onclick="escalaPDF()" style="flex:1;min-width:110px;padding:11px;background:#2B7A9E;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">📄 PDF</button>
 <button onclick="publicarEscala()" style="flex:1;min-width:110px;padding:11px;background:#C8553D;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">✅ Aprovar e publicar</button>
@@ -520,21 +521,61 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js');
 // ===== ESCALA IA (admin) =====
 var escalaDados=null;
 function escEsc(s){return String(s==null?'':s).replace(/[<>&]/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;'}[c]})}
-function renderEscalaGrid(d){
+var ESCALA_ROSTER=['Davisson','Fabrício','Igor','Jorge','Paulo','Adriana','Márcia','Paulo Novo','Isabela','Yasmim','Leonardo','Gabriel','Tiago','Wellington'];
+var ESCALA_CAT={Davisson:'cozinheiros','Fabrício':'cozinheiros',Igor:'cozinheiros',Jorge:'cozinheiros',Paulo:'auxiliares',Adriana:'auxiliares','Márcia':'auxiliares','Paulo Novo':'auxiliares',Isabela:'auxiliares',Yasmim:'copa',Leonardo:'garcons',Gabriel:'garcons',Tiago:'garcons',Wellington:'garcons'};
+var ESCALA_MAX={Davisson:5,'Fabrício':5,Igor:5,Adriana:4,'Márcia':4,'Paulo Novo':4};
+function diaNomes(x){var n={};(x.cozinha||[]).forEach(function(p){n[p]=1});if(x.limpeza)n[x.limpeza]=1;if(x.copa)n[x.copa]=1;(x.garcons||[]).forEach(function(p){n[p]=1});return Object.keys(n)}
+function renderEscalaGrid(d,edit){
   var dias=d.dias||[];
   var th=dias.map(function(x){return '<th style="background:#dbe7f3;border:1px solid #9bb8d4;padding:6px 8px;font-size:12px;text-align:center;white-space:nowrap;color:#1a3a5c">'+escEsc(x.data)+'<br>'+escEsc(x.dia)+'</th>'}).join('');
-  var td=dias.map(function(x){
-    var coz=(x.cozinha||[]).map(function(n){return '• '+escEsc(n)}).join('<br>')||'—';
-    var extra='';
-    if(x.limpeza)extra+='<div style="margin-top:8px">• '+escEsc(x.limpeza)+' <i>(Limpeza)</i></div>';
-    if(x.copa)extra+='<div style="margin-top:8px">• '+escEsc(x.copa)+' <i>(Copa)</i></div>';
-    var gar=(x.garcons||[]).map(function(n){return '• '+escEsc(n)}).join('<br>')||'—';
-    return '<td style="border:1px solid #9bb8d4;padding:8px;vertical-align:top;font-size:12px;min-width:118px">'+
+  var opts=function(sel){return ESCALA_ROSTER.map(function(n){return '<option'+(n===sel?' selected':'')+'>'+escEsc(n)+'</option>'}).join('')};
+  var td=dias.map(function(x,i){
+    var coz,extra,gar;
+    if(edit){
+      coz=(x.cozinha||[]).map(function(n,j){return '<span style="display:inline-block;background:#eef;border-radius:8px;padding:1px 6px;margin:2px">'+escEsc(n)+' <a onclick="escDel('+i+',\'cozinha\','+j+')" style="color:#c00;cursor:pointer;font-weight:700">✕</a></span>'}).join(' ');
+      coz+='<div style="margin-top:4px"><select onchange="escAdd('+i+',\'cozinha\',this)" style="font-size:11px;max-width:100%"><option value="">+ add</option>'+opts('')+'</select></div>';
+      extra='<div style="margin-top:6px;font-size:11px">Limpeza: <select onchange="escField('+i+',\'limpeza\',this.value)" style="font-size:11px"><option value="">—</option>'+opts(x.limpeza)+'</select></div>';
+      extra+='<div style="margin-top:3px;font-size:11px">Copa: <select onchange="escField('+i+',\'copa\',this.value)" style="font-size:11px"><option value="">—</option>'+opts(x.copa)+'</select></div>';
+      gar=(x.garcons||[]).map(function(n,j){return '<span style="display:inline-block;background:#efe;border-radius:8px;padding:1px 6px;margin:2px">'+escEsc(n)+' <a onclick="escDel('+i+',\'garcons\','+j+')" style="color:#c00;cursor:pointer;font-weight:700">✕</a></span>'}).join(' ');
+      gar+='<div style="margin-top:4px"><select onchange="escAdd('+i+',\'garcons\',this)" style="font-size:11px;max-width:100%"><option value="">+ add</option>'+opts('')+'</select></div>';
+    }else{
+      coz=(x.cozinha||[]).map(function(n){return '• '+escEsc(n)}).join('<br>')||'—';
+      extra='';
+      if(x.limpeza)extra+='<div style="margin-top:8px">• '+escEsc(x.limpeza)+' <i>(Limpeza)</i></div>';
+      if(x.copa)extra+='<div style="margin-top:8px">• '+escEsc(x.copa)+' <i>(Copa)</i></div>';
+      gar=(x.garcons||[]).map(function(n){return '• '+escEsc(n)}).join('<br>')||'—';
+    }
+    return '<td style="border:1px solid #9bb8d4;padding:8px;vertical-align:top;font-size:12px;min-width:'+(edit?'150':'118')+'px">'+
       '<div style="font-weight:800;margin-bottom:4px">COZINHA</div>'+coz+extra+
       '<div style="font-weight:800;margin:10px 0 4px">SALÃO/GARÇONS</div>'+gar+'</td>'
   }).join('');
   return '<table style="border-collapse:collapse;width:100%"><thead><tr>'+th+'</tr></thead><tbody><tr>'+td+'</tr></tbody></table>';
 }
+function recomputeConfer(d){
+  var cont={};(d.dias||[]).forEach(function(x){diaNomes(x).forEach(function(n){cont[n]=(cont[n]||0)+1})});
+  var g={cozinheiros:[],auxiliares:[],copa:[],garcons:[]};
+  Object.keys(cont).forEach(function(n){var c=ESCALA_CAT[n]||'auxiliares';g[c].push({nome:n,dias:cont[n]})});
+  Object.keys(g).forEach(function(k){g[k].sort(function(a,b){return a.nome.localeCompare(b.nome)})});
+  d.conferencia=g;
+}
+function checkConflitos(d){
+  var out=[],cont={};
+  (d.dias||[]).forEach(function(x){
+    diaNomes(x).forEach(function(n){cont[n]=(cont[n]||0)+1});
+    var coz=(x.cozinha||[]).filter(function(n){return ESCALA_CAT[n]==='cozinheiros'}).length;
+    var aux=diaNomes(x).filter(function(n){return ESCALA_CAT[n]==='auxiliares'}).length;
+    if(coz<2)out.push(x.dia+' '+x.data+': menos de 2 cozinheiros');
+    if(aux<2)out.push(x.dia+' '+x.data+': menos de 2 auxiliares');
+  });
+  Object.keys(ESCALA_MAX).forEach(function(n){if((cont[n]||0)>ESCALA_MAX[n])out.push(n+' com '+cont[n]+' dias (máx '+ESCALA_MAX[n]+')')});
+  return out;
+}
+var escEdit=false;
+function escSalvar(){try{localStorage.setItem('toca_escala_draft',JSON.stringify(escalaDados))}catch(e){}mostrarEscala(false)}
+function escDel(i,campo,j){var x=escalaDados.dias[i];if(campo==='cozinha'||campo==='garcons'){x[campo].splice(j,1)}else{x[campo]=null}escSalvar()}
+function escAdd(i,campo,sel){var v=sel.value;if(!v)return;var x=escalaDados.dias[i];if(!Array.isArray(x[campo]))x[campo]=[];if(x[campo].indexOf(v)<0)x[campo].push(v);escSalvar()}
+function escField(i,campo,v){escalaDados.dias[i][campo]=v||null;escSalvar()}
+function escToggleEdit(){if(!escalaDados){toast('Gere a escala primeiro',true);return}escEdit=!escEdit;mostrarEscala(false)}
 function renderEscalaConfer(d){
   var c=d.conferencia||{};
   function grp(t,arr){return arr&&arr.length?('<b>'+t+':</b> '+arr.map(function(x){return escEsc(x.nome)+' '+x.dias}).join(' · ')):''}
@@ -554,10 +595,12 @@ function escalaTexto(d){
 }
 function mostrarEscala(scroll){
   if(!escalaDados)return;
-  document.getElementById('escGrid').innerHTML=renderEscalaGrid(escalaDados);
+  recomputeConfer(escalaDados);
+  document.getElementById('escGrid').innerHTML=renderEscalaGrid(escalaDados,escEdit);
   document.getElementById('escConfer').innerHTML=renderEscalaConfer(escalaDados);
-  var cf=(escalaDados.conflitos||[]).filter(Boolean);
+  var cf=checkConflitos(escalaDados);
   document.getElementById('escConflitos').innerHTML=cf.length?('<div style="background:#fff4e5;border:1px solid #f0c98a;border-radius:8px;padding:8px;font-size:11px"><b>⚠️ Conflitos:</b><br>'+cf.map(escEsc).join('<br>')+'</div>'):'<div style="color:#2e7d32;font-size:11px">✅ Sem conflitos</div>';
+  var eb=document.getElementById('escEditBtn');if(eb)eb.textContent=escEdit?'✓ Concluir edição':'✏️ Editar';
   document.getElementById('escResultWrap').style.display='block';
   if(scroll)document.getElementById('escResultWrap').scrollIntoView({behavior:'smooth'});
 }
