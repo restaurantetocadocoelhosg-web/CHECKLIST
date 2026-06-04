@@ -21,9 +21,11 @@ const sb = createClient(SUPA_URL, SUPA_KEY);
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-function today() { return new Date().toISOString().slice(0, 10); }
+// Datas SEMPRE no fuso de Brasília (America/Sao_Paulo) — evita o "dia" virar às 21h (UTC).
+function spDate(d) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d); }
+function today() { return spDate(new Date()); }
 function nowTime() { return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }); }
-function datesBack(n) { const d = []; for (let i = 0; i < n; i++) { const dt = new Date(); dt.setDate(dt.getDate() - i); d.push(dt.toISOString().slice(0, 10)); } return d; }
+function datesBack(n) { const d = []; for (let i = 0; i < n; i++) { d.push(spDate(new Date(Date.now() - i * 86400000))); } return d; }
 
 async function requireAdmin(req, res) {
   const user_id = req.body?.user_id || req.query?.user_id;
@@ -355,7 +357,112 @@ app.get('/api/reports/:date/:tab', async (req, res) => {
   }
   res.json(result);
 });
-app.get('/api/export/pdf', (req, res) => { res.redirect(`/api/reports/${req.query.date || today()}/abertura`); });
+// ---------- Relatório imprimível (PDF) — HTML estilizado com setores, cores e template ----------
+const SECTOR_COLORS = ['#7B3F00', '#2E8B57', '#1f6feb', '#9C27B0', '#E67E22', '#16A085', '#C0392B', '#D4AC0D'];
+function escH(s) { return String(s == null ? '' : s).replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
+function fmtDataBR(d) { const p = String(d).slice(0, 10).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d; }
+async function fetchTabReport(date, tab, sectors) {
+  const out = [];
+  for (const s of sectors) {
+    const { data: tasks } = await sb.from('ck_tasks').select('*').eq('sector_id', s.id).eq('tab', tab).eq('active', 1).order('sort_order');
+    const items = [];
+    for (const t of (tasks || [])) {
+      const { data: e } = await sb.from('ck_checklist_entries').select('*').eq('task_id', t.id).eq('date', date).eq('tab', tab).maybeSingle();
+      items.push({ text: t.text, critical: !!t.critical, done: e ? !!e.done : false, done_by: e?.done_by || null, done_at: e?.done_at || null, observation: e?.observation || null });
+    }
+    const { data: fin } = await sb.from('ck_finalizations').select('*').eq('sector_id', s.id).eq('date', date).eq('tab', tab).maybeSingle();
+    out.push({ ...s, items, finalized: !!fin, finalizedBy: fin?.finalized_by || null, finalizedAt: fin?.finalized_at || null });
+  }
+  return out;
+}
+function renderTabHTML(titulo, emoji, sectors) {
+  let gd = 0, gt = 0;
+  const blocks = sectors.map((s, idx) => {
+    const done = s.items.filter(i => i.done).length, tot = s.items.length;
+    gd += done; gt += tot;
+    if (!tot) return '';
+    const cor = SECTOR_COLORS[idx % SECTOR_COLORS.length];
+    const pct = tot ? Math.round(done / tot * 100) : 0;
+    const rows = s.items.map(i => {
+      const mark = i.done ? '✔' : '✗';
+      const cls = i.done ? 'done' : (i.critical ? 'pend-crit' : 'pend');
+      const quem = i.done ? `<span class="who">${escH(i.done_by || '')}${i.done_at ? ' · ' + escH(i.done_at) : ''}</span>` : '';
+      const obs = i.observation ? `<div class="obs">📝 ${escH(i.observation)}</div>` : '';
+      return `<tr class="${cls}"><td class="mk">${mark}</td><td>${escH(i.text)}${i.critical ? ' <span class="crit">crítica</span>' : ''}${obs}</td><td class="who-c">${quem}</td></tr>`;
+    }).join('');
+    const fin = s.finalized ? `<div class="fin">✅ Finalizado por ${escH(s.finalizedBy || '')}${s.finalizedAt ? ' às ' + escH(s.finalizedAt) : ''}</div>` : `<div class="nofin">⚠️ Setor não finalizado</div>`;
+    return `<div class="sector" style="border-color:${cor}">
+      <div class="sec-h" style="background:${cor}"><span>${escH(s.icon || '')} ${escH(s.name)}</span><span class="sec-pct">${done}/${tot} · ${pct}%</span></div>
+      <table>${rows}</table>${fin}</div>`;
+  }).join('');
+  const pct = gt ? Math.round(gd / gt * 100) : 0;
+  return `<div class="tab"><h2>${emoji} ${titulo} <span class="tot">${gd}/${gt} · ${pct}%</span></h2>${blocks || '<p class="vazio">Sem dados.</p>'}</div>`;
+}
+app.get('/api/export/pdf', async (req, res) => {
+  try {
+    const date = (req.query.date || today()).slice(0, 10);
+    const { data: sectors } = await sb.from('ck_sectors').select('*').order('sort_order');
+    const secs = sectors || [];
+    const [ab, fe] = await Promise.all([fetchTabReport(date, 'abertura', secs), fetchTabReport(date, 'fechamento', secs)]);
+    const { data: att } = await sb.from('ck_attendance').select('*').eq('date', date).order('check_in');
+    const { data: occ } = await sb.from('ck_occurrences').select('*').eq('date', date).order('id');
+    const attHTML = (att && att.length) ? att.map(a => `<span class="chip">${escH(a.user_name)} ${a.check_in || ''}${a.check_out ? '–' + a.check_out : ''}</span>`).join('') : '<span class="muted">Sem registros</span>';
+    const occHTML = (occ && occ.length) ? occ.map(o => `<li class="${o.priority === 'urgente' ? 'urg' : ''}">${escH(o.text)} <span class="muted">(${escH(o.created_by || '')} ${escH(o.created_at || '')})</span>${o.resolved ? ' ✅' : ''}</li>`).join('') : '<li class="muted">Nenhuma ocorrência</li>';
+    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relatório ${fmtDataBR(date)} — Toca do Coelho</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+body{background:#f4efe7;color:#2c2218;padding:16px;font-size:13px}
+.sheet{max-width:820px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden}
+.head{background:#7B3F00;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.head h1{font-size:18px} .head .d{font-size:13px;opacity:.92}
+.bar{display:flex;gap:8px;padding:12px 22px;flex-wrap:wrap;background:#f8f2e9;border-bottom:1px solid #ecdcc6}
+.bar .box{flex:1;min-width:120px;background:#fff;border-radius:8px;padding:8px 10px;border:1px solid #ecdcc6}
+.bar .box b{display:block;font-size:17px;color:#7B3F00} .bar .box small{color:#897}
+.body{padding:14px 22px}
+h2{font-size:15px;margin:16px 0 8px;color:#5a3000;border-bottom:2px solid #e7d3b8;padding-bottom:4px;display:flex;justify-content:space-between;align-items:baseline}
+h2 .tot{font-size:12px;color:#897;font-weight:600}
+.sector{border:1px solid #e7d3b8;border-left-width:5px;border-radius:8px;margin-bottom:10px;overflow:hidden;page-break-inside:avoid}
+.sec-h{color:#fff;padding:6px 10px;font-weight:700;font-size:13px;display:flex;justify-content:space-between}
+.sec-pct{font-weight:600;opacity:.95}
+table{width:100%;border-collapse:collapse}
+td{padding:5px 8px;border-top:1px solid #f0e6d6;vertical-align:top;font-size:12.5px}
+td.mk{width:20px;text-align:center;font-weight:700}
+tr.done .mk{color:#2E8B57} tr.pend .mk{color:#C0392B} tr.pend-crit .mk{color:#C0392B}
+tr.pend-crit{background:#fdecea} tr.pend-crit td{font-weight:600}
+.crit{background:#C0392B;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700;vertical-align:middle}
+.who-c{width:34%;text-align:right} .who{color:#897;font-size:11px}
+.obs{color:#8a6d3b;font-size:11px;font-style:italic;margin-top:2px}
+.fin{color:#2E8B57;font-size:11.5px;font-weight:600;padding:5px 10px;background:#eafaf0}
+.nofin{color:#b8860b;font-size:11.5px;font-weight:600;padding:5px 10px;background:#fdf6e3}
+.chip{display:inline-block;background:#f0e6d6;border-radius:6px;padding:3px 8px;margin:2px;font-size:11px}
+.extra{padding:0 22px 16px} .extra h3{font-size:13px;color:#5a3000;margin:14px 0 6px}
+.extra ul{list-style:none} .extra li{padding:3px 0;font-size:12px;border-top:1px solid #f0e6d6} .extra li.urg{color:#C0392B;font-weight:600}
+.muted{color:#a99}
+.foot{text-align:center;color:#a99;font-size:10px;padding:12px}
+.printbtn{position:fixed;top:12px;right:12px;background:#7B3F00;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.vazio{color:#a99;padding:8px}
+@media print{body{background:#fff;padding:0}.sheet{box-shadow:none;border-radius:0;max-width:100%}.printbtn{display:none}}
+</style></head><body>
+<button class="printbtn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+<div class="sheet">
+  <div class="head"><div><h1>🐰 Relatório de Checklist</h1><div class="d">Restaurante Toca do Coelho</div></div><div class="d"><b>${fmtDataBR(date)}</b></div></div>
+  <div class="bar">
+    <div class="box"><b>${(() => { let d = 0, t = 0; ab.forEach(s => s.items.forEach(i => { t++; if (i.done) d++; })); return t ? Math.round(d / t * 100) : 0; })()}%</b><small>☀️ Abertura</small></div>
+    <div class="box"><b>${(() => { let d = 0, t = 0; fe.forEach(s => s.items.forEach(i => { t++; if (i.done) d++; })); return t ? Math.round(d / t * 100) : 0; })()}%</b><small>🌙 Fechamento</small></div>
+    <div class="box"><b>${(att || []).length}</b><small>👥 Presenças</small></div>
+    <div class="box"><b>${(occ || []).filter(o => !o.resolved).length}</b><small>⚠️ Ocorrências abertas</small></div>
+  </div>
+  <div class="body">${renderTabHTML('Abertura', '☀️', ab)}${renderTabHTML('Fechamento', '🌙', fe)}</div>
+  <div class="extra">
+    <h3>👥 Presença do dia</h3><div>${attHTML}</div>
+    <h3>⚠️ Ocorrências</h3><ul>${occHTML}</ul>
+  </div>
+  <div class="foot">Uso interno — Restaurante Toca do Coelho · Gerado em ${nowTime()} (Brasília)</div>
+</div></body></html>`;
+    res.type('html').send(html);
+  } catch (e) { res.status(500).send('Erro ao gerar relatório: ' + e.message); }
+});
 
 // ===================== ADMIN =====================
 app.get('/api/users', mwUser, async (req, res) => { const { data } = await sb.from('ck_users').select('id,username,name,role,sector,active').order('name'); res.json(data || []); });
