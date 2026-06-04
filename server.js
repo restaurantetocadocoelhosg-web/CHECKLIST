@@ -558,6 +558,68 @@ app.post('/api/agents/trigger', async (req, res) => {
 
 // ===================== ESCALA IA (admin-only) =====================
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+
+// ===================== ASSISTENTE IA (Checklist) =====================
+async function claudeMsg(system, userContent, maxTokens) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: maxTokens || 1200, system, messages: [{ role: 'user', content: userContent }] })
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error((d && d.error && d.error.message) || ('HTTP ' + r.status));
+  return (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+}
+async function rankingCalc(days) {
+  const dates = datesBack(days);
+  const [{ data: entries }, { data: att }, { data: fins }, { data: eb }] = await Promise.all([
+    sb.from('ck_checklist_entries').select('done_by').eq('done', 1).in('date', dates).not('done_by', 'is', null),
+    sb.from('ck_attendance').select('user_name').in('date', dates),
+    sb.from('ck_finalizations').select('finalized_by').in('date', dates),
+    sb.from('ck_attendance').select('user_name,check_in').in('date', dates)
+  ]);
+  const tally = (arr, key) => { const m = {}; (arr || []).forEach(x => { const k = x[key]; if (k) m[k] = (m[k] || 0) + 1; }); return Object.entries(m).map(([n, v]) => ({ nome: n, qtd: v })).sort((a, b) => b.qtd - a.qtd); };
+  const ebMap = {}; (eb || []).forEach(e => { if (e.user_name && (!ebMap[e.user_name] || e.check_in < ebMap[e.user_name])) ebMap[e.user_name] = e.check_in; });
+  return { dias: days, tarefas: tally(entries, 'done_by'), presencas: tally(att, 'user_name'), finalizacoes: tally(fins, 'finalized_by'), mais_cedo: Object.entries(ebMap).map(([n, t]) => ({ nome: n, hora: t })).sort((a, b) => (a.hora || '').localeCompare(b.hora || '')) };
+}
+async function dadosDia(date) {
+  const { data: sectors } = await sb.from('ck_sectors').select('*').order('sort_order'); const secs = sectors || [];
+  const [ab, fe] = await Promise.all([fetchTabReport(date, 'abertura', secs), fetchTabReport(date, 'fechamento', secs)]);
+  const { data: att } = await sb.from('ck_attendance').select('user_name,check_in,check_out').eq('date', date).order('check_in');
+  const { data: occ } = await sb.from('ck_occurrences').select('text,priority,resolved,created_by,created_at').eq('date', date);
+  const { data: temp } = await sb.from('ck_temperature_logs').select('equipment,temperature,alert,time').eq('date', date).eq('alert', 1);
+  const { data: exp } = await sb.from('ck_expiry_items').select('name,expiry_date,replaced').eq('replaced', 0);
+  const venc = (exp || []).map(i => ({ n: i.name, dias: Math.ceil((new Date(i.expiry_date) - new Date(date)) / 86400000) })).filter(i => i.dias <= 7).sort((a, b) => a.dias - b.dias).map(i => ({ item: i.n, vence_em_dias: i.dias }));
+  const simplify = arr => arr.map(s => ({ setor: s.name, feitas: s.items.filter(i => i.done).length, total: s.items.length, finalizado: s.finalized, pendentes: s.items.filter(i => !i.done).map(i => i.text + (i.critical ? ' (CRÍTICA)' : '')), observacoes: s.items.filter(i => i.observation).map(i => i.text + ': ' + i.observation) }));
+  return { data: date, abertura: simplify(ab), fechamento: simplify(fe), presencas: att || [], ocorrencias: occ || [], alertas_temperatura: temp || [], validades_proximas: venc };
+}
+app.post('/api/ai/resumo', mwManager, async (req, res) => {
+  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'IA não configurada (ANTHROPIC_API_KEY no Railway).' });
+  try {
+    const date = today();
+    const dados = await dadosDia(date);
+    const sys = `Você é o assistente operacional do Restaurante Toca do Coelho. Faça um RESUMO DIÁRIO do checklist em português do Brasil, OBJETIVO, em tópicos curtos, para o gerente ler rápido. Hoje é ${date} (Brasília). Baseie-se SOMENTE nos dados (JSON). Estruture: 1) ✅ Abertura e Fechamento (percentual e setores finalizados); 2) ⚠️ O que ficou PENDENTE (destaque CRÍTICAS); 3) 👥 Presença; 4) 🌡️ Alertas de temperatura e ⏳ validades vencendo; 5) 📌 Ocorrências. Se algo estiver 100% ok, registre rápido. Não invente nada além do JSON.`;
+    const texto = await claudeMsg(sys, 'DADOS DE HOJE (JSON):\n' + JSON.stringify(dados).slice(0, 60000), 1300);
+    res.json({ ok: true, texto });
+  } catch (e) { res.status(502).json({ error: 'Falha na IA: ' + e.message }); }
+});
+app.post('/api/ai/perguntar', mwManager, async (req, res) => {
+  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'IA não configurada (ANTHROPIC_API_KEY no Railway).' });
+  const pergunta = String((req.body && req.body.pergunta) || '').trim().slice(0, 500);
+  if (!pergunta) return res.status(400).json({ error: 'Escreva uma pergunta.' });
+  try {
+    const date = today();
+    const [hoje, r7, r30, occ7] = await Promise.all([
+      dadosDia(date), rankingCalc(7), rankingCalc(30),
+      sb.from('ck_occurrences').select('text,priority,resolved,created_by,date').in('date', datesBack(7))
+    ]);
+    const ctx = { hoje, ranking_7_dias: r7, ranking_30_dias: r30, ocorrencias_7_dias: (occ7.data || []) };
+    const sys = `Você é o assistente analítico do Restaurante Toca do Coelho. Hoje é ${date} (Brasília). Responda em português do Brasil, OBJETIVO e amigável, com base EXCLUSIVAMENTE nos dados (JSON). "ranking_7_dias"/"ranking_30_dias" têm tarefas/presenças/finalizações por pessoa e quem chega mais cedo (mais_cedo). "hoje" tem o checklist do dia (abertura/fechamento, pendentes, presenças, ocorrências, alertas de temperatura, validades). Para listas use marcadores curtos. Se não houver dado, diga que não encontrou. NÃO invente.`;
+    const texto = await claudeMsg(sys, 'DADOS (JSON):\n' + JSON.stringify(ctx).slice(0, 70000) + '\n\nPERGUNTA: ' + pergunta, 1200);
+    res.json({ ok: true, texto });
+  } catch (e) { res.status(502).json({ error: 'Falha na IA: ' + e.message }); }
+});
+
 const REGRAS_ESCALA = `Você monta a ESCALA SEMANAL de funcionários do Restaurante Toca do Coelho (São Gonçalo/RJ).
 A semana vai de SEGUNDA a DOMINGO. Use SEMPRE a escala anterior enviada para dar continuidade às folgas, alternâncias e ao dia-sim-dia-não. Se a escala anterior não vier, avise e marque suposições com [VERIFICAR].
 

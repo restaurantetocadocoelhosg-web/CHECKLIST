@@ -350,19 +350,20 @@ Representante Legal: Nayara da Conceição Chaves — Administradora</p>
 <div class="ov" id="detailOv" onclick="cPanel('detail')"></div><div class="pnl" id="detailPnl"><div class="pnl-h"><h2 id="detailTitle">Detalhe</h2><button class="btn-i" onclick="cPanel('detail')">✕</button></div><div class="pnl-b" id="detailBody"></div></div>
 <div class="ov" id="alertOv" onclick="cPanel('alert')"></div><div class="pnl" id="alertPnl"><div class="pnl-h"><h2>🔔 Alertas</h2><button class="btn-i" onclick="cPanel('alert')">✕</button></div><div class="pnl-b" id="alertBody"></div></div>
 <div id="pgAgentes" class="page">
-<div class="hdr"><span class="br">Agentes IA</span><div class="hdr-r"><button class="btn-i" onclick="loadAgents()" title="Atualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button></div></div>
+<div class="hdr"><span class="br">Assistente IA</span><div class="hdr-r"><button class="btn-i" onclick="aiResumo()" title="Resumo do dia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button></div></div>
 <div class="main">
-<div class="sec-title" style="margin-top:4px">Status</div>
-<div class="sec-sub">Conectividade em tempo real com o n8n</div>
-<div id="agentGrid" class="agent-grid"><div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text2);font-size:12px">Carregando...</div></div>
-<div class="sec-title">Acoes Rapidas</div>
-<div class="sec-sub">Envie eventos diretamente ao Maestro</div>
+<div class="sec-title" style="margin-top:4px">🤖 Assistente do dia</div>
+<div class="sec-sub">A IA lê o checklist de hoje e os últimos dias e responde. Tudo direto, sem depender de robôs externos.</div>
+<button class="btn btn-blue" style="width:100%;margin-bottom:12px;padding:12px" onclick="aiResumo()">📋 Gerar resumo do dia</button>
+<div class="sec-title">Perguntas rápidas</div>
 <div class="qa-list">
-<button class="qa-btn" onclick="doAgentTrigger('daily.summary_request',{})"><span class="qa-ico">📊</span><span class="qa-txt">Resumo do dia<small>Maestro gera relatorio da operacao atual</small></span></button>
-<button class="qa-btn" onclick="doAgentTrigger('inventory.restock_request',{})"><span class="qa-ico">📦</span><span class="qa-txt">Solicitar reposicao de estoque<small>Agente Estoque verifica e registra necessidade</small></span></button>
-<button class="qa-btn" onclick="doAgentOccurrence()"><span class="qa-ico">⚠</span><span class="qa-txt">Reportar ocorrencia operacional<small>Agente Operacional registra e escala se necessario</small></span></button>
-<button class="qa-btn" onclick="doAgentTrigger('checklist.audit_request',{})"><span class="qa-ico">🔍</span><span class="qa-txt">Solicitar auditoria do dia<small>Agente Auditoria analisa os checklists de hoje</small></span></button>
+<button class="qa-btn" onclick="aiPergSug('O que ainda está pendente hoje? Liste as tarefas que faltam, destacando as críticas.')"><span class="qa-ico">⚠️</span><span class="qa-txt">O que falta hoje<small>Pendências e tarefas críticas</small></span></button>
+<button class="qa-btn" onclick="aiPergSug('Quem mais marcou tarefas e finalizou setores nos últimos 7 dias?')"><span class="qa-ico">🏆</span><span class="qa-txt">Destaques da semana<small>Quem mais produziu</small></span></button>
+<button class="qa-btn" onclick="aiPergSug('Tem alguma validade vencendo ou alerta de temperatura para eu agir hoje?')"><span class="qa-ico">🌡️</span><span class="qa-txt">Validades e temperaturas<small>Riscos do dia</small></span></button>
+<button class="qa-btn" onclick="aiPergSug('Quem chegou mais cedo e quem faltou nos últimos 7 dias?')"><span class="qa-ico">⏰</span><span class="qa-txt">Presença e pontualidade<small>Quem chega cedo / faltas</small></span></button>
 </div>
+<textarea id="aiQ" rows="2" placeholder="Pergunte algo sobre a operação... ex: quanto setor foi finalizado hoje?" style="width:100%;padding:11px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;margin:6px 0;background:var(--surface);color:var(--text);resize:vertical"></textarea>
+<button class="btn btn-blue" style="width:100%;padding:12px" onclick="aiPerguntar()">🤖 Perguntar</button>
 <div id="agentResp" class="agent-resp"><div class="ar-hd" id="arTitle"></div><div class="ar-bd" id="arBody"></div><div class="ar-ts" id="arTs"></div></div>
 </div>
 <div class="spacer"></div>
@@ -644,35 +645,19 @@ function escalaPDF(){
   w.document.close();
 }
 
-// ===== AGENTS =====
-async function loadAgents(){
-  var g=document.getElementById('agentGrid');
-  try{
-    var r=await fetch('/api/agents/status?user_id='+user.id);
-    var data=await r.json();
-    g.innerHTML=data.map(function(a){return '<div class="agent-card '+(a.active?'on':'')+'"><span class="agent-icon">'+a.icon+'</span><div class="agent-info"><div class="agent-name">'+a.name+'</div><div class="agent-status">'+(a.active?'Online':'Offline')+'</div></div><div class="agent-dot"></div></div>';}).join('');
-  }catch(e){g.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text2);font-size:12px">Erro ao carregar agentes</div>';}
+// ===== ASSISTENTE IA =====
+function loadAgents(){}
+function aiShow(title){const resp=document.getElementById('agentResp');document.getElementById('arTitle').textContent=title;document.getElementById('arBody').textContent='🤔 Analisando...';document.getElementById('arTs').textContent='';resp.classList.add('on');}
+function aiTs(){return new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'});}
+async function aiResumo(){
+  aiShow('📋 Resumo do dia');
+  try{const d=await API('/api/ai/resumo',{method:'POST',body:'{}'});document.getElementById('arBody').textContent=d.texto||d.error||'Não consegui gerar agora.';document.getElementById('arTs').textContent=aiTs();}catch(e){document.getElementById('arBody').textContent='Falha ao gerar o resumo. Tente de novo.';}
 }
-async function doAgentTrigger(agentEvent,payload){
-  var resp=document.getElementById('agentResp');
-  resp.classList.remove('on');
-  toast('Enviando para o Maestro...');
-  try{
-    var r=await fetch('/api/agents/trigger',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:agentEvent,payload:payload,user_id:user.id,user_name:user.name})});
-    var txt=await r.text();var data=txt?JSON.parse(txt):{};
-    if(!r.ok){toast('Erro: '+(data.error||'Falha'),true);return;}
-    document.getElementById('arTitle').textContent='Resposta do agente';
-    var rb=data.response;
-    document.getElementById('arBody').textContent=typeof rb==='object'?JSON.stringify(rb,null,2):(rb||'Evento recebido com sucesso pelo Maestro.');
-    document.getElementById('arTs').textContent=new Date().toLocaleTimeString('pt-BR');
-    resp.classList.add('on');
-    toast('Maestro notificado!');
-  }catch(e){toast('Falha ao contatar Maestro',true);}
-}
-function doAgentOccurrence(){
-  var text=prompt('Descreva a ocorrencia operacional:');
-  if(!text||!text.trim())return;
-  doAgentTrigger('occurrence.reported',{text:text.trim(),reported_by:user.name});
+function aiPergSug(q){document.getElementById('aiQ').value=q;aiPerguntar();}
+async function aiPerguntar(){
+  const q=document.getElementById('aiQ').value.trim();if(!q){toast('Escreva uma pergunta');return;}
+  aiShow('🤖 '+q);
+  try{const d=await API('/api/ai/perguntar',{method:'POST',body:JSON.stringify({pergunta:q})});document.getElementById('arBody').textContent=d.texto||d.error||'Não consegui responder.';document.getElementById('arTs').textContent=aiTs();}catch(e){document.getElementById('arBody').textContent='Falha ao perguntar. Tente de novo.';}
 }
 </script>
 </body>
